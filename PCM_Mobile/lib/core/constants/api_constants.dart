@@ -1,17 +1,7 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 class ApiConstants {
-  // Base URL - Auto-detect platform
+  // Base URL - Production server
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:5283';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5283';
-    } else {
-      // iOS, macOS, Windows, Linux
-      return 'http://localhost:5283';
-    }
+    return 'http://160.250.133.197:5001';
   }
 
   // Auth endpoints
