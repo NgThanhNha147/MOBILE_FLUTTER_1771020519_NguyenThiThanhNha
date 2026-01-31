@@ -84,26 +84,66 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       Text(
                         'Xin chào,',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                          color: Colors.grey[600],
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        member?.fullName ?? 'Guest',
-                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryBlue,
+                      Wrap(
+                        spacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            member?.fullName ??
+                                authState.user?.fullName ??
+                                'Guest',
+                            style: Theme.of(context).textTheme.displaySmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                          ),
+                          if (authState.user?.isAdmin == true)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF44336),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.admin_panel_settings,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'ADMIN',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                        ],
                       ),
                       const SizedBox(height: 32),
 
                       // Wallet Card
                       GlassCard(
                         padding: const EdgeInsets.all(24),
-                        gradientColors: [
-                          AppTheme.primaryBlue.withOpacity(0.2),
-                          AppTheme.primaryPurple.withOpacity(0.2),
-                        ],
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -112,12 +152,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.grey[200],
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
                                     Icons.account_balance_wallet,
-                                    color: Colors.white,
+                                    color: Colors.black,
                                     size: 28,
                                   ),
                                 ),
@@ -128,7 +168,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: _getTierColor(member?.tier).withOpacity(0.3),
+                                    color: _getTierColor(
+                                      member?.tier,
+                                    ).withOpacity(0.3),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
                                       color: _getTierColor(member?.tier),
@@ -160,7 +202,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                             Text(
                               'Số dư ví',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.grey[700],
                                 fontSize: 14,
                               ),
                             ),
@@ -170,11 +212,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               style: const TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.black,
                               ),
                               suffix: ' VNĐ',
                               decimals: 0,
                             ),
+                            const SizedBox(height: 24),
+
+                            // VIP Tier Progress
+                            _buildVipTierProgress(member),
+
                             const SizedBox(height: 20),
                             Row(
                               children: [
@@ -183,7 +230,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     context,
                                     icon: Icons.add_circle_outline,
                                     label: 'Nạp tiền',
-                                    onTap: () => context.push('/wallet/deposit'),
+                                    onTap: () =>
+                                        context.push('/wallet/deposit'),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -207,8 +255,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       Text(
                         'Thao tác nhanh',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -267,9 +315,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         children: [
                           Text(
                             'Lịch đặt sân',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           TextButton(
                             onPressed: () => context.push('/bookings'),
@@ -284,10 +331,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           3,
                           (index) => Padding(
                             padding: const EdgeInsets.only(bottom: 12),
-                            child: ShimmerLoading(
+                            child: Container(
                               width: double.infinity,
                               height: 100,
-                              borderRadius: 16,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(2),
+                                border: Border.all(
+                                  color: Color(0xFFE0E0E0),
+                                  width: 0.5,
+                                ),
+                              ),
                             ),
                           ),
                         )
@@ -320,7 +374,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           ),
                         )
                       else
-                        ...bookingState.myBookings.take(3).map(
+                        ...bookingState.myBookings
+                            .take(3)
+                            .map(
                               (booking) => Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: GlassCard(
@@ -332,7 +388,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                         height: 60,
                                         decoration: BoxDecoration(
                                           gradient: AppTheme.primaryGradient,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.sports_tennis,
@@ -343,10 +401,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              booking.courtName ?? 'Sân ${booking.courtId}',
+                                              booking.courtName ??
+                                                  'Sân ${booking.courtId}',
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
@@ -377,16 +437,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: _getStatusColor(booking.status).withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: _getStatusColor(
+                                            booking.status,
+                                          ).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
-                                            color: _getStatusColor(booking.status),
+                                            color: _getStatusColor(
+                                              booking.status,
+                                            ),
                                           ),
                                         ),
                                         child: Text(
                                           _getStatusText(booking.status),
                                           style: TextStyle(
-                                            color: _getStatusColor(booking.status),
+                                            color: _getStatusColor(
+                                              booking.status,
+                                            ),
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                           ),
@@ -423,9 +491,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -445,6 +511,131 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
+  Widget _buildVipTierProgress(dynamic member) {
+    if (member == null) return const SizedBox.shrink();
+
+    // Calculate current tier info
+    final tier = member.tier;
+    final rankLevel = member.rankLevel ?? 0;
+    final tierIndex = tier?.index ?? 0;
+
+    // Define tier thresholds (points needed to reach each tier)
+    final Map<int, Map<String, dynamic>> tierThresholds = {
+      0: {'name': 'Bronze', 'max': 1000, 'color': AppTheme.bronzeTier},
+      1: {'name': 'Silver', 'max': 2500, 'color': AppTheme.silverTier},
+      2: {'name': 'Gold', 'max': 5000, 'color': AppTheme.goldTier},
+      3: {'name': 'Platinum', 'max': 10000, 'color': AppTheme.platinumTier},
+    };
+
+    final currentTier = tierThresholds[tierIndex] ?? tierThresholds[0]!;
+    final nextTierIndex = tierIndex < 3 ? tierIndex + 1 : tierIndex;
+    final nextTier = tierThresholds[nextTierIndex];
+
+    // Calculate progress
+    final currentThreshold = tierIndex > 0
+        ? tierThresholds[tierIndex - 1]!['max'] as int
+        : 0;
+    final nextThreshold = nextTier!['max'] as int;
+    final progress = tierIndex >= 3
+        ? 1.0
+        : ((rankLevel - currentThreshold) / (nextThreshold - currentThreshold))
+              .clamp(0.0, 1.0);
+    final pointsToNext = tierIndex >= 3
+        ? 0
+        : (nextThreshold - rankLevel).toInt();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Tiến trình VIP',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (tierIndex < 3)
+              Text(
+                'Còn $pointsToNext điểm để lên ${nextTier['name']}',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 11,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Progress Bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Stack(
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: progress,
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        currentTier['color'] as Color,
+                        (nextTier['color'] as Color).withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (currentTier['color'] as Color).withOpacity(0.4),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+
+        // Points Display
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '$rankLevel điểm',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (tierIndex < 3)
+              Text(
+                '${nextThreshold} điểm',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildActionCard(
     BuildContext context, {
     required IconData icon,
@@ -455,18 +646,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     return GlassCard(
       padding: const EdgeInsets.all(20),
       onTap: onTap,
-      gradientColors: [
-        color.withOpacity(0.15),
-        color.withOpacity(0.05),
-      ],
+      gradientColors: [color.withOpacity(0.15), color.withOpacity(0.05)],
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, color.withOpacity(0.7)],
-              ),
+              gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -481,10 +667,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ],
       ),

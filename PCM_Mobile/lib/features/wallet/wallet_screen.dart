@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/widgets/glass_widgets.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/constants/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/wallet_provider.dart';
@@ -16,6 +17,10 @@ class WalletScreen extends ConsumerStatefulWidget {
 }
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
+  String? _selectedTypeFilter; // null = all, 'Deposit', 'Booking', 'Refund'
+  DateTime? _filterStartDate;
+  DateTime? _filterEndDate;
+
   @override
   void initState() {
     super.initState();
@@ -24,8 +29,206 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     });
   }
 
+  List<dynamic> get _filteredTransactions {
+    final allTransactions = ref.watch(walletProvider).transactions;
+
+    return allTransactions.where((tx) {
+      // Type filter
+      if (_selectedTypeFilter != null) {
+        final txTypeName = _getTransactionTypeName(tx.type);
+        if (!txTypeName.contains(_selectedTypeFilter!)) {
+          return false;
+        }
+      }
+
+      // Date range filter
+      if (_filterStartDate != null &&
+          tx.createdDate.isBefore(_filterStartDate!)) {
+        return false;
+      }
+      if (_filterEndDate != null &&
+          tx.createdDate.isAfter(
+            _filterEndDate!.add(const Duration(days: 1)),
+          )) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
   Future<void> _handleRefresh() async {
     await ref.read(walletProvider.notifier).loadTransactions();
+  }
+
+  Future<void> _showFilterDialog() async {
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Lọc giao dịch',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              // Transaction Type Filter
+              const Text(
+                'Loại giao dịch:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  FilterChip(
+                    label: const Text('Tất cả'),
+                    selected: _selectedTypeFilter == null,
+                    onSelected: (selected) {
+                      setModalState(() {
+                        _selectedTypeFilter = null;
+                      });
+                      setState(() {});
+                    },
+                  ),
+                  FilterChip(
+                    label: const Text('Nạp tiền'),
+                    selected: _selectedTypeFilter == 'Nạp',
+                    onSelected: (selected) {
+                      setModalState(() {
+                        _selectedTypeFilter = selected ? 'Nạp' : null;
+                      });
+                      setState(() {});
+                    },
+                  ),
+                  FilterChip(
+                    label: const Text('Đặt sân'),
+                    selected: _selectedTypeFilter == 'Đặt',
+                    onSelected: (selected) {
+                      setModalState(() {
+                        _selectedTypeFilter = selected ? 'Đặt' : null;
+                      });
+                      setState(() {});
+                    },
+                  ),
+                  FilterChip(
+                    label: const Text('Hoàn tiền'),
+                    selected: _selectedTypeFilter == 'Hoàn',
+                    onSelected: (selected) {
+                      setModalState(() {
+                        _selectedTypeFilter = selected ? 'Hoàn' : null;
+                      });
+                      setState(() {});
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Date Range Filter
+              const Text(
+                'Khoảng thời gian:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _filterStartDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) {
+                          setModalState(() {
+                            _filterStartDate = date;
+                          });
+                          setState(() {});
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(
+                        _filterStartDate != null
+                            ? DateFormat('dd/MM/yyyy').format(_filterStartDate!)
+                            : 'Từ ngày',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _filterEndDate ?? DateTime.now(),
+                          firstDate: _filterStartDate ?? DateTime(2020),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) {
+                          setModalState(() {
+                            _filterEndDate = date;
+                          });
+                          setState(() {});
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(
+                        _filterEndDate != null
+                            ? DateFormat('dd/MM/yyyy').format(_filterEndDate!)
+                            : 'Đến ngày',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setModalState(() {
+                          _selectedTypeFilter = null;
+                          _filterStartDate = null;
+                          _filterEndDate = null;
+                        });
+                        setState(() {});
+                      },
+                      child: const Text('Xóa bộ lọc'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                      ),
+                      child: const Text('Áp dụng'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -60,16 +263,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     // Balance Card
                     GlassCard(
                       padding: const EdgeInsets.all(32),
-                      gradientColors: [
-                        AppTheme.successGreen.withOpacity(0.2),
-                        AppTheme.primaryBlue.withOpacity(0.2),
-                      ],
                       child: Column(
                         children: [
                           Text(
                             'Số dư hiện tại',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.grey[700],
                               fontSize: 16,
                             ),
                           ),
@@ -79,7 +278,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                             style: const TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Colors.black,
                             ),
                             suffix: ' VNĐ',
                             decimals: 0,
@@ -90,10 +289,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                             icon: Icons.add_circle_outline,
                             onPressed: () => context.push('/wallet/deposit'),
                             height: 50,
-                            gradientColors: const [
-                              Colors.white,
-                              Colors.white70,
-                            ],
                           ),
                         ],
                       ),
@@ -102,52 +297,53 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     const SizedBox(height: 32),
 
                     // Transactions Header
-                    Text(
-                      'Lịch sử giao dịch',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Lịch sử giao dịch',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          onPressed: _showFilterDialog,
+                          icon: Badge(
+                            isLabelVisible:
+                                _selectedTypeFilter != null ||
+                                _filterStartDate != null,
+                            child: const Icon(Icons.filter_list),
                           ),
+                          tooltip: 'Lọc giao dịch',
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
 
                     // Transactions List
-                    if (walletState.isLoading && walletState.transactions.isEmpty)
+                    if (walletState.isLoading &&
+                        walletState.transactions.isEmpty)
                       ...List.generate(
                         5,
                         (index) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: ShimmerLoading(
+                          child: Container(
                             width: double.infinity,
                             height: 80,
-                            borderRadius: 16,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(2),
+                              border: Border.all(
+                                color: Color(0xFFE0E0E0),
+                                width: 0.5,
+                              ),
+                            ),
                           ),
                         ),
                       )
-                    else if (walletState.transactions.isEmpty)
-                      GlassCard(
-                        padding: const EdgeInsets.all(32),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.receipt_long_outlined,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Chưa có giao dịch nào',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
+                    else if (_filteredTransactions.isEmpty)
+                      const EmptyTransactionsState()
                     else
-                      ...walletState.transactions.map(
+                      ..._filteredTransactions.map(
                         (transaction) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: GlassCard(
@@ -158,22 +354,28 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                   width: 50,
                                   height: 50,
                                   decoration: BoxDecoration(
-                                    color: _getTransactionTypeColor(transaction.type)
-                                        .withOpacity(0.2),
+                                    color: _getTransactionTypeColor(
+                                      transaction.type,
+                                    ).withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
                                     _getTransactionTypeIcon(transaction.type),
-                                    color: _getTransactionTypeColor(transaction.type),
+                                    color: _getTransactionTypeColor(
+                                      transaction.type,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        _getTransactionTypeName(transaction.type),
+                                        _getTransactionTypeName(
+                                          transaction.type,
+                                        ),
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -181,8 +383,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        DateFormat('dd/MM/yyyy HH:mm')
-                                            .format(transaction.createdDate),
+                                        DateFormat(
+                                          'dd/MM/yyyy HH:mm',
+                                        ).format(transaction.createdDate),
                                         style: TextStyle(
                                           color: Colors.grey[600],
                                           fontSize: 12,
@@ -224,18 +427,23 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: _getStatusColor(transaction.status)
-                                            .withOpacity(0.1),
+                                        color: _getStatusColor(
+                                          transaction.status,
+                                        ).withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: _getStatusColor(transaction.status),
+                                          color: _getStatusColor(
+                                            transaction.status,
+                                          ),
                                           width: 1,
                                         ),
                                       ),
                                       child: Text(
                                         _getStatusText(transaction.status),
                                         style: TextStyle(
-                                          color: _getStatusColor(transaction.status),
+                                          color: _getStatusColor(
+                                            transaction.status,
+                                          ),
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -369,7 +577,9 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(walletProvider.notifier).requestDeposit(
+      await ref
+          .read(walletProvider.notifier)
+          .requestDeposit(
             amount: double.parse(_amountController.text),
             proofImageUrl: _imageUrlController.text.trim(),
           );
@@ -447,10 +657,6 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
                   // Info Card
                   GlassCard(
                     padding: const EdgeInsets.all(20),
-                    gradientColors: [
-                      AppTheme.infoBlue.withOpacity(0.15),
-                      AppTheme.infoBlue.withOpacity(0.05),
-                    ],
                     child: Row(
                       children: [
                         const Icon(
@@ -506,7 +712,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
                         const SizedBox(height: 20),
                         _buildInfoRow('Ngân hàng:', 'Vietcombank'),
                         _buildInfoRow('Số tài khoản:', '1234567890'),
-                        _buildInfoRow('Chủ tài khoản:', 'CLUB PCM'),
+                        _buildInfoRow('Chủ tài khoản:', 'VỢT THỦ PHÔ NÚI'),
                         _buildInfoRow(
                           'Nội dung:',
                           'NAP TIEN [SoDienThoai]',
@@ -571,10 +777,6 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
                     icon: Icons.send,
                     onPressed: _handleDeposit,
                     isLoading: _isLoading,
-                    gradientColors: const [
-                      AppTheme.successGreen,
-                      Color(0xFF81C784),
-                    ],
                     height: 56,
                   ),
 
@@ -598,10 +800,7 @@ class _DepositScreenState extends ConsumerState<DepositScreen> {
             width: 120,
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ),
           Expanded(

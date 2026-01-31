@@ -57,7 +57,8 @@ class BookingService {
       );
     } on DioException catch (e) {
       // Retry logic for server errors only
-      if ((e.response?.statusCode == 500 || e.response?.statusCode == 503) && retryCount < 2) {
+      if ((e.response?.statusCode == 500 || e.response?.statusCode == 503) &&
+          retryCount < 2) {
         await Future.delayed(Duration(seconds: (retryCount + 1) * 2));
         return createBooking(
           courtId: courtId,
@@ -91,7 +92,9 @@ class BookingService {
 
   Future<CancelPreview> getCancelPreview(int bookingId) async {
     try {
-      final response = await dio.get('${ApiConstants.baseUrl}/api/bookings/cancel-preview/$bookingId');
+      final response = await dio.get(
+        '${ApiConstants.baseUrl}/api/bookings/cancel-preview/$bookingId',
+      );
       return CancelPreview.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleError(e);
@@ -107,9 +110,11 @@ class BookingService {
           if (courtId != null) 'courtId': courtId,
         },
       );
-      
+
       final List<dynamic> data = response.data;
-      return data.map((json) => TimeSlot.fromJson(json as Map<String, dynamic>)).toList();
+      return data
+          .map((json) => TimeSlot.fromJson(json as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -150,50 +155,57 @@ class BookingService {
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> holdBooking({
     required int courtId,
     required DateTime startTime,
     required DateTime endTime,
   }) async {
     try {
+      print(
+        '🚀 Calling hold API: courtId=$courtId, start=$startTime, end=$endTime',
+      );
       final response = await dio.post(
-        '${ApiConstants.baseUrl}/bookings/hold',
+        '${ApiConstants.baseUrl}/api/bookings/hold',
         data: {
           'courtId': courtId,
           'startTime': startTime.toIso8601String(),
           'endTime': endTime.toIso8601String(),
         },
       );
-      
+
+      print('📦 Hold response: ${response.data}');
       return response.data['data'] as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
-  
+
   Future<void> confirmBooking(int bookingId) async {
     try {
-      await dio.post('${ApiConstants.baseUrl}/bookings/confirm/$bookingId');
+      print('🎯 Confirming booking ID: $bookingId');
+      await dio.post('${ApiConstants.baseUrl}/api/bookings/confirm/$bookingId');
+      print('✅ Booking confirmed successfully');
     } on DioException catch (e) {
+      print('❌ Confirm error: ${e.response?.data}');
       throw _handleError(e);
     }
   }
-  
+
   Future<void> cancelHoldBooking(int bookingId) async {
     try {
-      await dio.post('${ApiConstants.baseUrl}/bookings/cancel/$bookingId');
+      await dio.post('${ApiConstants.baseUrl}/api/bookings/cancel/$bookingId');
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> createRecurringBooking({
     required int courtId,
     required DateTime startDate,
     required DateTime endDate,
     required String startTime, // "09:00"
-    required String endTime,   // "10:00"
+    required String endTime, // "10:00"
     required String recurrencePattern, // "Weekly;Mon,Wed,Fri"
     required int occurrencesCount,
   }) async {
@@ -210,7 +222,7 @@ class BookingService {
           'occurrencesCount': occurrencesCount,
         },
       );
-      
+
       return response.data['data'] as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -220,12 +232,12 @@ class BookingService {
   String _handleError(DioException error) {
     if (error.response != null) {
       final data = error.response!.data;
-      
+
       // Parse standardized ApiResponse
       if (data is Map) {
         final errorCode = data['errorCode'] as String?;
         final message = data['message'] as String?;
-        
+
         // Translate error codes to Vietnamese
         switch (errorCode) {
           case 'INSUFFICIENT_BALANCE':
@@ -274,10 +286,10 @@ class BookingService {
             return message ?? 'Có lỗi xảy ra';
         }
       }
-      
+
       return 'Lỗi: ${error.response!.statusMessage}';
-    } else if (error.type == DioExceptionType.connectionTimeout || 
-               error.type == DioExceptionType.receiveTimeout) {
+    } else if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout) {
       return 'Kết nối timeout. Vui lòng kiểm tra mạng!';
     } else {
       return 'Không thể kết nối đến server. Kiểm tra mạng!';

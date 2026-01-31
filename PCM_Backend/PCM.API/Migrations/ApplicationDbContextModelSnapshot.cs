@@ -491,6 +491,13 @@ namespace PCM.API.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CreatorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime(6)");
 
@@ -498,6 +505,9 @@ namespace PCM.API.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Format")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxParticipants")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -515,6 +525,9 @@ namespace PCM.API.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

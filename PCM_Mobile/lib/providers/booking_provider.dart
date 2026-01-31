@@ -77,7 +77,7 @@ class BookingNotifier extends StateNotifier<BookingState> {
     // Save current date range for SignalR refresh
     _currentStartDate = startDate;
     _currentEndDate = endDate;
-    
+
     state = state.copyWith(isLoading: true, error: null);
     try {
       final bookings = await _bookingService.getCalendar(
@@ -114,10 +114,13 @@ class BookingNotifier extends StateNotifier<BookingState> {
         endTime: endTime,
         recurrenceRule: recurrenceRule,
       );
-      
+
       // Reload calendar with CURRENT date range (not just current month)
       if (_currentStartDate != null && _currentEndDate != null) {
-        await loadCalendar(startDate: _currentStartDate!, endDate: _currentEndDate!);
+        await loadCalendar(
+          startDate: _currentStartDate!,
+          endDate: _currentEndDate!,
+        );
       } else {
         // Fallback to current month if no date range set
         final now = DateTime.now();
@@ -125,7 +128,7 @@ class BookingNotifier extends StateNotifier<BookingState> {
         final monthEnd = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
         await loadCalendar(startDate: monthStart, endDate: monthEnd);
       }
-      
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -137,19 +140,22 @@ class BookingNotifier extends StateNotifier<BookingState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _bookingService.cancelBooking(bookingId);
-      
+
       // Reload both my bookings and calendar
       await loadMyBookings();
-      
+
       if (_currentStartDate != null && _currentEndDate != null) {
-        await loadCalendar(startDate: _currentStartDate!, endDate: _currentEndDate!);
+        await loadCalendar(
+          startDate: _currentStartDate!,
+          endDate: _currentEndDate!,
+        );
       } else {
         final now = DateTime.now();
         final monthStart = DateTime(now.year, now.month, 1);
         final monthEnd = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
         await loadCalendar(startDate: monthStart, endDate: monthEnd);
       }
-      
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -185,12 +191,15 @@ class BookingNotifier extends StateNotifier<BookingState> {
         newStartTime: newStartTime,
         newEndTime: newEndTime,
       );
-      
+
       // Reload calendar
       if (_currentStartDate != null && _currentEndDate != null) {
-        await loadCalendar(startDate: _currentStartDate!, endDate: _currentEndDate!);
+        await loadCalendar(
+          startDate: _currentStartDate!,
+          endDate: _currentEndDate!,
+        );
       }
-      
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -210,19 +219,22 @@ class BookingNotifier extends StateNotifier<BookingState> {
         newStartTime: newStartTime,
         newEndTime: newEndTime,
       );
-      
+
       // Reload calendar
       if (_currentStartDate != null && _currentEndDate != null) {
-        await loadCalendar(startDate: _currentStartDate!, endDate: _currentEndDate!);
+        await loadCalendar(
+          startDate: _currentStartDate!,
+          endDate: _currentEndDate!,
+        );
       }
-      
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
     }
   }
-  
+
   Future<Map<String, dynamic>> holdBooking({
     required int courtId,
     required DateTime startTime,
@@ -235,7 +247,7 @@ class BookingNotifier extends StateNotifier<BookingState> {
         startTime: startTime,
         endTime: endTime,
       );
-      
+
       state = state.copyWith(isLoading: false);
       return holdData;
     } catch (e) {
@@ -243,34 +255,40 @@ class BookingNotifier extends StateNotifier<BookingState> {
       rethrow;
     }
   }
-  
+
   Future<void> confirmBooking(int bookingId) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _bookingService.confirmBooking(bookingId);
-      
+
       // Reload calendar
       if (_currentStartDate != null && _currentEndDate != null) {
-        await loadCalendar(startDate: _currentStartDate!, endDate: _currentEndDate!);
+        await loadCalendar(
+          startDate: _currentStartDate!,
+          endDate: _currentEndDate!,
+        );
       }
-      
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
     }
   }
-  
+
   Future<void> cancelHoldBooking(int bookingId) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       await _bookingService.cancelHoldBooking(bookingId);
-      
+
       // Reload calendar
       if (_currentStartDate != null && _currentEndDate != null) {
-        await loadCalendar(startDate: _currentStartDate!, endDate: _currentEndDate!);
+        await loadCalendar(
+          startDate: _currentStartDate!,
+          endDate: _currentEndDate!,
+        );
       }
-      
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -284,4 +302,3 @@ final bookingProvider = StateNotifierProvider<BookingNotifier, BookingState>((
 ) {
   return BookingNotifier(ref.watch(bookingServiceProvider));
 });
-

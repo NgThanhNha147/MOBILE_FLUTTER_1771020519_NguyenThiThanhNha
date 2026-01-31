@@ -32,11 +32,12 @@ class WalletService {
 
       // Backend returns { total, page, pageSize, data: [...] }
       final responseData = response.data;
-      if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+      if (responseData is Map<String, dynamic> &&
+          responseData.containsKey('data')) {
         final List<dynamic> data = responseData['data'];
         return data.map((json) => WalletTransaction.fromJson(json)).toList();
       }
-      
+
       // Fallback if backend returns list directly
       final List<dynamic> data = response.data;
       return data.map((json) => WalletTransaction.fromJson(json)).toList();

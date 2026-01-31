@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/widgets/glass_widgets.dart';
-import '../../core/constants/app_theme.dart';
+import '../../core/widgets/loading_overlay.dart';
+import '../../core/widgets/error_dialog.dart';
+import '../../core/utils/form_validators.dart';
 import '../../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -41,10 +43,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
   }
 
@@ -61,32 +60,51 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    LoadingOverlay.show(context, message: 'Đang tạo tài khoản...');
+
     try {
-      await ref.read(authProvider.notifier).register(
+      await ref
+          .read(authProvider.notifier)
+          .register(
             fullName: _fullNameController.text,
             email: _emailController.text,
             password: _passwordController.text,
           );
 
+      LoadingOverlay.hide();
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đăng ký thành công!'),
-            backgroundColor: AppTheme.successGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
+        await SuccessDialog.show(
+          context,
+          title: 'Đăng ký thành công!',
+          message: 'Tài khoản của bạn đã được tạo. Hãy đăng nhập để tiếp tục.',
+          onClose: () => context.go('/auth/login'),
         );
-        context.go('/auth/login');
       }
     } catch (e) {
+      LoadingOverlay.hide();
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: AppTheme.errorRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        final errorMessage = e.toString();
+
+        if (errorMessage.contains('timeout') ||
+            errorMessage.contains('Timeout')) {
+          await ErrorDialog.showTimeoutError(context, onRetry: _handleRegister);
+        } else if (errorMessage.contains('network') ||
+            errorMessage.contains('SocketException')) {
+          await ErrorDialog.showNetworkError(context, onRetry: _handleRegister);
+        } else {
+          await ErrorDialog.show(
+            context,
+            title: 'Đăng ký thất bại',
+            message: errorMessage.replaceAll('Exception: ', ''),
+            errorCode: 'REGISTER_ERROR',
+            actions: [
+              ErrorAction('Đóng', null),
+              ErrorAction('Thử lại', _handleRegister, isPrimary: true),
+            ],
+          );
+        }
       }
     }
   }
@@ -106,9 +124,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-              ),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
             child: const Icon(Icons.arrow_back, color: Colors.white),
           ),
@@ -116,18 +132,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         ),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppTheme.primaryBlue,
-              AppTheme.primaryPurple,
-              AppTheme.secondaryPink,
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
+        decoration: BoxDecoration(color: Color(0xFFFAFAFA)),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -193,19 +198,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                               // Full Name Field
                               TextFormField(
                                 controller: _fullNameController,
-                                decoration: const InputDecoration(
+                                style: const TextStyle(color: Colors.black),
+                                decoration: InputDecoration(
                                   labelText: 'Họ và tên',
-                                  prefixIcon: Icon(Icons.person),
+                                  labelStyle: TextStyle(
+                                    color: Colors.black.withOpacity(0.6),
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.person,
+                                    color: Colors.black,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 2.0,
+                                    ),
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Vui lòng nhập họ tên';
-                                  }
-                                  if (value.length < 3) {
-                                    return 'Họ tên phải có ít nhất 3 ký tự';
-                                  }
-                                  return null;
-                                },
+                                validator: FormValidators.validateFullName,
                               ),
 
                               const SizedBox(height: 20),
@@ -214,19 +241,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
-                                decoration: const InputDecoration(
+                                style: const TextStyle(color: Colors.black),
+                                decoration: InputDecoration(
                                   labelText: 'Email',
-                                  prefixIcon: Icon(Icons.email),
+                                  labelStyle: TextStyle(
+                                    color: Colors.black.withOpacity(0.6),
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.email,
+                                    color: Colors.black,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 2.0,
+                                    ),
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Vui lòng nhập email';
-                                  }
-                                  if (!value.contains('@')) {
-                                    return 'Email không hợp lệ';
-                                  }
-                                  return null;
-                                },
+                                validator: FormValidators.validateEmail,
                               ),
 
                               const SizedBox(height: 20),
@@ -235,14 +284,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
+                                style: const TextStyle(color: Colors.black),
                                 decoration: InputDecoration(
                                   labelText: 'Mật khẩu',
-                                  prefixIcon: const Icon(Icons.lock),
+                                  labelStyle: TextStyle(
+                                    color: Colors.black.withOpacity(0.6),
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.lock,
+                                    color: Colors.black,
+                                  ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword
                                           ? Icons.visibility_off
                                           : Icons.visibility,
+                                      color: Colors.black,
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -250,16 +307,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                       });
                                     },
                                   ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 2.0,
+                                    ),
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Vui lòng nhập mật khẩu';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'Mật khẩu phải có ít nhất 6 ký tự';
-                                  }
-                                  return null;
-                                },
+                                validator: FormValidators.validatePassword,
                               ),
 
                               const SizedBox(height: 20),
@@ -268,14 +340,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                               TextFormField(
                                 controller: _confirmPasswordController,
                                 obscureText: _obscureConfirmPassword,
+                                style: const TextStyle(color: Colors.black),
                                 decoration: InputDecoration(
                                   labelText: 'Xác nhận mật khẩu',
-                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  labelStyle: TextStyle(
+                                    color: Colors.black.withOpacity(0.6),
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline,
+                                    color: Colors.black,
+                                  ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscureConfirmPassword
                                           ? Icons.visibility_off
                                           : Icons.visibility,
+                                      color: Colors.black,
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -284,16 +364,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                       });
                                     },
                                   ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                      width: 2.0,
+                                    ),
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Vui lòng xác nhận mật khẩu';
-                                  }
-                                  if (value != _passwordController.text) {
-                                    return 'Mật khẩu không khớp';
-                                  }
-                                  return null;
-                                },
+                                validator: (value) =>
+                                    FormValidators.validateConfirmPassword(
+                                      value,
+                                      _passwordController.text,
+                                    ),
                               ),
 
                               const SizedBox(height: 32),
@@ -304,10 +403,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 icon: Icons.person_add,
                                 onPressed: _handleRegister,
                                 isLoading: authState.isLoading,
-                                gradientColors: const [
-                                  AppTheme.primaryBlue,
-                                  AppTheme.primaryPurple,
-                                ],
                                 height: 56,
                               ),
                             ],

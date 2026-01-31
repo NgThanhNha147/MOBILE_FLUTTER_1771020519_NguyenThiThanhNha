@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_theme.dart';
 import '../../../models/time_slot.dart';
 
 class CourtTimeline extends StatelessWidget {
@@ -28,7 +27,7 @@ class CourtTimeline extends StatelessWidget {
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: AppTheme.primaryBlue,
+              color: Colors.black,
             ),
           ),
         ),
@@ -50,82 +49,106 @@ class CourtTimeline extends StatelessWidget {
   }
 
   Widget _buildSlot(BuildContext context, TimeSlot slot) {
+    // Define clear colors for status
+    const Color greenAvailable = Color(0xFF4CAF50); // Bright green
+    const Color redBooked = Color(0xFFF44336); // Bright red
+    const Color yellowMine = Color(0xFFFFC107); // Bright yellow
+    const Color orangeHolding = Color(0xFFFF9800); // Bright orange
+
     Color backgroundColor;
     Color borderColor;
     String statusText;
     IconData icon;
-    
-    // Check if slot is holding
+    bool isInteractive = true;
+
+    // Check slot status with clear priority order
     final isHolding = slot.status == 'Holding';
-    final isMyHolding = isHolding && slot.memberId == currentUserId;
-    
+    final isMySlot = slot.memberId == currentUserId;
+
     if (!slot.isBooked) {
-      backgroundColor = AppTheme.successGreen.withOpacity(0.1);
-      borderColor = AppTheme.successGreen;
+      // 🟢 CASE 1: Slot completely empty - Available
+      backgroundColor = greenAvailable.withOpacity(0.15);
+      borderColor = greenAvailable;
       statusText = 'Trống';
       icon = Icons.check_circle_outline;
-    } else if (isMyHolding) {
-      backgroundColor = Colors.orange.withOpacity(0.1);
-      borderColor = Colors.orange;
-      statusText = 'Đang giữ';
-      icon = Icons.timer;
-    } else if (isHolding) {
-      backgroundColor = Colors.orange.withOpacity(0.05);
-      borderColor = Colors.orange.shade300;
-      statusText = 'Đang giữ';
+      isInteractive = true;
+    } else if (isHolding && isMySlot) {
+      // 🟠 CASE 2: I'm holding this slot (payment pending)
+      backgroundColor = orangeHolding.withOpacity(0.15);
+      borderColor = orangeHolding;
+      statusText = 'Đang giữ (tôi)';
+      icon = Icons.schedule;
+      isInteractive = false; // Can't tap - already in payment flow
+    } else if (isHolding && !isMySlot) {
+      // 🟠 CASE 3: Someone else is holding (temporarily locked)
+      backgroundColor = orangeHolding.withOpacity(0.08);
+      borderColor = orangeHolding.withOpacity(0.6);
+      statusText = 'Đang giữ chỗ';
       icon = Icons.lock_clock;
-    } else if (slot.memberId == currentUserId) {
-      backgroundColor = AppTheme.primaryBlue.withOpacity(0.1);
-      borderColor = AppTheme.primaryBlue;
+      isInteractive = false; // Can't book - someone else holding
+    } else if (isMySlot) {
+      // 🟡 CASE 4: My confirmed booking
+      backgroundColor = yellowMine.withOpacity(0.15);
+      borderColor = yellowMine;
       statusText = 'Của tôi';
-      icon = Icons.person;
+      icon = Icons.star;
+      isInteractive = true; // Can tap to cancel/manage
     } else {
-      backgroundColor = AppTheme.errorRed.withOpacity(0.1);
-      borderColor = AppTheme.errorRed;
+      // 🔴 CASE 5: Booked by someone else (confirmed)
+      backgroundColor = redBooked.withOpacity(0.15);
+      borderColor = redBooked;
       statusText = 'Đã đặt';
       icon = Icons.block;
+      isInteractive = false; // Can't book - already taken
     }
 
     return GestureDetector(
-      onTap: () => onSlotTap(slot),
-      child: Container(
-        width: 90,
-        margin: const EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: borderColor.withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: borderColor, size: 26),
-            const SizedBox(height: 6),
-            Text(
-              '${slot.hour}:00',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: borderColor,
-                fontSize: 15,
+      onTap: isInteractive ? () => onSlotTap(slot) : null,
+      child: Opacity(
+        opacity: isInteractive ? 1.0 : 0.6,
+        child: Container(
+          width: 90,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor, width: 2),
+            boxShadow: isInteractive
+                ? [
+                    BoxShadow(
+                      color: borderColor.withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: borderColor, size: 26),
+              const SizedBox(height: 6),
+              Text(
+                '${slot.hour}:00',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: borderColor,
+                  fontSize: 15,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              statusText,
-              style: TextStyle(
-                color: borderColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 2),
+              Text(
+                statusText,
+                style: TextStyle(
+                  color: borderColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

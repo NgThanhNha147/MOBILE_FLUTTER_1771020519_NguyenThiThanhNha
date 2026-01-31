@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../core/widgets/glass_widgets.dart';
+import '../../core/widgets/loading_overlay.dart';
+import '../../core/widgets/error_dialog.dart';
 import '../../core/constants/app_theme.dart';
 import '../../providers/booking_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -36,15 +38,16 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   void _loadCalendarForMonth(DateTime date) {
     final start = DateTime(date.year, date.month, 1);
     final end = DateTime(date.year, date.month + 1, 0);
-    ref.read(bookingProvider.notifier).loadCalendar(
-      startDate: start,
-      endDate: end,
-    );
+    ref
+        .read(bookingProvider.notifier)
+        .loadCalendar(startDate: start, endDate: end);
   }
 
   Future<void> _handleRefresh() async {
+    if (!mounted) return; // Check if widget still mounted
     await ref.read(bookingProvider.notifier).loadCourts();
     _loadCalendarForMonth(_focusedDay);
+    if (!mounted) return; // Check again after async
     setState(() {
       _refreshKey++; // Force rebuild timeline
     });
@@ -81,17 +84,14 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                     Text(
                       'Đặt sân',
                       style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryBlue,
-                          ),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Chọn ngày và giờ để đặt sân',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 24),
 
@@ -102,7 +102,8 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                         firstDay: DateTime.now(),
                         lastDay: DateTime.now().add(const Duration(days: 90)),
                         focusedDay: _focusedDay,
-                        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                        selectedDayPredicate: (day) =>
+                            isSameDay(_selectedDay, day),
                         calendarFormat: CalendarFormat.month,
                         startingDayOfWeek: StartingDayOfWeek.monday,
                         headerStyle: HeaderStyle(
@@ -138,9 +139,11 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                         eventLoader: (day) {
                           // Return list of events for this day
                           return bookingState.bookings
-                              .where((b) =>
-                                  isSameDay(b.startTime, day) &&
-                                  b.status.index == 0) // Active bookings
+                              .where(
+                                (b) =>
+                                    isSameDay(b.startTime, day) &&
+                                    b.status.index == 0,
+                              ) // Active bookings
                               .toList();
                         },
                         onDaySelected: (selectedDay, focusedDay) {
@@ -162,9 +165,13 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildLegendItem('Còn trống', AppTheme.successGreen),
-                        _buildLegendItem('Đã đặt', AppTheme.errorRed),
-                        _buildLegendItem('Của bạn', AppTheme.primaryBlue),
+                        _buildLegendItem('Còn trống', const Color(0xFF4CAF50)),
+                        _buildLegendItem(
+                          'Người khác đặt',
+                          const Color(0xFFF44336),
+                        ),
+                        _buildLegendItem('Của tôi', const Color(0xFFFFC107)),
+                        _buildLegendItem('Đang giữ', const Color(0xFFFF9800)),
                       ],
                     ),
 
@@ -185,9 +192,21 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          _buildPolicyItem('✅ Hủy trước 24h', 'Hoàn 100%', AppTheme.successGreen),
-                          _buildPolicyItem('⚠️  Hủy 6-24h trước', 'Hoàn 50%', AppTheme.accentOrange),
-                          _buildPolicyItem('❌ Hủy < 6h trước', 'Không hoàn', AppTheme.errorRed),
+                          _buildPolicyItem(
+                            '✅ Hủy trước 24h',
+                            'Hoàn 100%',
+                            AppTheme.successGreen,
+                          ),
+                          _buildPolicyItem(
+                            '⚠️  Hủy 6-24h trước',
+                            'Hoàn 50%',
+                            AppTheme.accentOrange,
+                          ),
+                          _buildPolicyItem(
+                            '❌ Hủy < 6h trước',
+                            'Không hoàn',
+                            AppTheme.errorRed,
+                          ),
                         ],
                       ),
                     ),
@@ -200,14 +219,13 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                       children: [
                         Text(
                           'Lịch đặt sân theo giờ',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          _selectedDay != null 
-                            ? DateFormat('dd/MM/yyyy').format(_selectedDay!)
-                            : '',
+                          _selectedDay != null
+                              ? DateFormat('dd/MM/yyyy').format(_selectedDay!)
+                              : '',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -220,32 +238,41 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                     // Timeline Slots
                     if (_selectedDay != null)
                       FutureBuilder<List<TimeSlot>>(
-                        key: ValueKey('timeline_$_refreshKey'), // Add key for rebuild
-                        future: ref.read(bookingProvider.notifier).getDailySlots(_selectedDay!),
+                        key: ValueKey(
+                          'timeline_$_refreshKey',
+                        ), // Add key for rebuild
+                        future: ref
+                            .read(bookingProvider.notifier)
+                            .getDailySlots(_selectedDay!),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
                             return const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(32.0),
                                 child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryBlue),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppTheme.primaryBlue,
+                                  ),
                                 ),
                               ),
                             );
                           }
-                          
+
                           if (snapshot.hasError) {
                             return GlassCard(
                               padding: const EdgeInsets.all(24),
                               child: Center(
                                 child: Text(
                                   'Lỗi: ${snapshot.error}',
-                                  style: const TextStyle(color: AppTheme.errorRed),
+                                  style: const TextStyle(
+                                    color: AppTheme.errorRed,
+                                  ),
                                 ),
                               ),
                             );
                           }
-                          
+
                           final slots = snapshot.data ?? [];
                           if (slots.isEmpty) {
                             return GlassCard(
@@ -261,16 +288,18 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                               ),
                             );
                           }
-                          
+
                           // Group slots by court
                           final Map<int, List<TimeSlot>> courtGroups = {};
                           for (var slot in slots) {
-                            courtGroups.putIfAbsent(slot.courtId, () => []).add(slot);
+                            courtGroups
+                                .putIfAbsent(slot.courtId, () => [])
+                                .add(slot);
                           }
-                          
+
                           final authState = ref.watch(authProvider);
                           final currentUserId = authState.member?.id;
-                          
+
                           return Column(
                             children: courtGroups.entries.map((entry) {
                               final courtSlots = entry.value;
@@ -282,7 +311,8 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                                     courtName: courtSlots.first.courtName,
                                     slots: courtSlots,
                                     currentUserId: currentUserId,
-                                    onSlotTap: (slot) => _handleSlotTap(slot, currentUserId),
+                                    onSlotTap: (slot) =>
+                                        _handleSlotTap(slot, currentUserId),
                                   ),
                                 ),
                               );
@@ -323,15 +353,17 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
           height: 16,
           decoration: BoxDecoration(
             color: color,
-            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: color.withOpacity(0.5), width: 1),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[700],
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
       ],
@@ -343,13 +375,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[800],
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[800])),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -373,22 +399,50 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   }
 
   void _handleSlotTap(TimeSlot slot, int? currentUserId) {
+    final isHolding = slot.status == 'Holding';
+    final isMySlot = slot.memberId == currentUserId;
+
     if (!slot.isBooked) {
-      // Slot trống - Quick booking
+      // 🟢 Slot trống - Quick booking
       _showQuickBookingDialog(
         courtId: slot.courtId,
         courtName: slot.courtName,
         hour: slot.hour,
       );
-    } else if (slot.memberId == currentUserId) {
-      // Slot của user - Show cancel/edit options
-      _showMyBookingOptions(slot);
-    } else {
-      // Slot đã được đặt bởi người khác
+    } else if (isHolding && isMySlot) {
+      // 🟠 Đang giữ chỗ của TÔI - Already in payment flow
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bạn đang trong quá trình thanh toán slot này. Vui lòng hoàn tất thanh toán!',
+          ),
+          backgroundColor: Color(0xFFFF9800),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else if (isHolding && !isMySlot) {
+      // 🟠 Đang giữ chỗ bởi NGƯỜI KHÁC
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Slot đã được đặt bởi ${slot.memberName ?? "người khác"}'),
-          backgroundColor: AppTheme.errorRed,
+          content: Text(
+            'Slot này đang được giữ bởi ${slot.memberName ?? "người khác"}. Vui lòng đợi hoặc chọn giờ khác!',
+          ),
+          backgroundColor: const Color(0xFFFF9800),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else if (isMySlot) {
+      // 🟡 Slot CỦA TÔI (confirmed) - Show cancel/edit options
+      _showMyBookingOptions(slot);
+    } else {
+      // 🔴 Slot đã được đặt bởi NGƯỜI KHÁC (confirmed)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '❌ Slot đã được đặt bởi ${slot.memberName ?? "người khác"}',
+          ),
+          backgroundColor: const Color(0xFFF44336),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -408,45 +462,26 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
       0,
     );
     final endTime = startTime.add(const Duration(hours: 1));
-    
-    // Show loading while holding slot
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryBlue),
-                ),
-                SizedBox(height: 16),
-                Text('Đang giữ chỗ...'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    
+
     try {
       // Step 1: Hold the booking
-      final holdData = await ref.read(bookingProvider.notifier).holdBooking(
-        courtId: courtId,
-        startTime: startTime,
-        endTime: endTime,
-      );
-      
+      final holdData = await ref
+          .read(bookingProvider.notifier)
+          .holdBooking(courtId: courtId, startTime: startTime, endTime: endTime)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw Exception(
+                'Timeout: Không thể kết nối server. Vui lòng thử lại!',
+              );
+            },
+          );
+
       if (mounted) {
-        Navigator.pop(context); // Close loading
-        
         // Step 2: Show confirmation dialog with countdown
         final authState = ref.read(authProvider);
         final currentBalance = authState.member?.walletBalance ?? 0.0;
-        
+
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -465,38 +500,54 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading
-        
         final errorMessage = e.toString();
-        if (errorMessage.contains('TIME_SLOT_CONFLICT') || 
-            errorMessage.contains('đã có người đặt')) {
+        if (errorMessage.contains('TIME_SLOT_CONFLICT') ||
+            errorMessage.contains('đã có người đặt') ||
+            errorMessage.contains('đã được đặt')) {
+          // Conflict - someone else booked first
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('❌ Slot đã bị đặt'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.error_outline, color: Color(0xFFF44336), size: 28),
+                  SizedBox(width: 12),
+                  Text('Slot đã bị đặt!'),
+                ],
+              ),
               content: const Text(
-                'Ai đó vừa đặt slot này trước bạn. Vui lòng chọn giờ khác!'
+                '🔴 Rất tiếc! Ai đó vừa đặt slot này trước bạn một chút.\n\n'
+                'Vui lòng chọn giờ khác hoặc thử lại sau!',
+                style: TextStyle(fontSize: 15),
               ),
               actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Đóng'),
+                ),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    setState(() {}); // Refresh calendar
+                    _handleRefresh(); // Refresh to show updated slots
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBlue,
+                    backgroundColor: const Color(0xFF4CAF50),
+                    foregroundColor: Colors.white,
                   ),
-                  child: const Text('Chọn giờ khác'),
+                  child: const Text('Làm mới'),
                 ),
               ],
             ),
           );
         } else {
+          // Other errors
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: AppTheme.errorRed,
+              content: Text(errorMessage.replaceAll('Exception: ', '')),
+              backgroundColor: const Color(0xFFF44336),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -519,20 +570,23 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
           children: [
             const Text(
               'Quản lý booking',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.info_outline, color: AppTheme.primaryBlue),
+              leading: const Icon(
+                Icons.info_outline,
+                color: AppTheme.primaryBlue,
+              ),
               title: Text('${slot.courtName} - ${slot.hour}:00'),
               subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDay!)),
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.cancel_outlined, color: AppTheme.errorRed),
+              leading: const Icon(
+                Icons.cancel_outlined,
+                color: AppTheme.errorRed,
+              ),
               title: const Text('Hủy booking'),
               subtitle: const Text('Xem chính sách hoàn tiền'),
               onTap: () {
@@ -548,107 +602,69 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
 
   void _showCancelDialog(int bookingId) async {
     // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-    
+    LoadingOverlay.show(context, message: 'Đang tải thông tin...');
+
     try {
-      final preview = await ref.read(bookingProvider.notifier).getCancelPreview(bookingId);
-      
+      final preview = await ref
+          .read(bookingProvider.notifier)
+          .getCancelPreview(bookingId);
+
+      LoadingOverlay.hide();
+
       if (!mounted) return;
-      Navigator.pop(context); // Close loading
-      
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Xác nhận hủy sân'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(preview.message),
-              const SizedBox(height: 16),
-              if (preview.canCancel)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.successGreen.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.successGreen),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Hoàn tiền:'),
-                      Text(
-                        '${preview.refundAmount.toStringAsFixed(0)}đ',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.successGreen,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Đóng'),
-            ),
-            if (preview.canCancel)
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  
-                  try {
-                    await ref.read(bookingProvider.notifier).cancelBooking(bookingId);
-                    
-                    if (mounted) {
-                      await _handleRefresh(); // Refresh timeline data
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('✅ Hủy sân thành công!'),
-                          backgroundColor: AppTheme.successGreen,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Lỗi: ${e.toString()}'),
-                          backgroundColor: AppTheme.errorRed,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.errorRed,
-                ),
-                child: const Text('Xác nhận hủy'),
-              ),
-          ],
-        ),
+
+      // Show confirmation dialog with refund info
+      final confirmed = await ConfirmDialog.show(
+        context,
+        title: 'Xác nhận hủy sân',
+        message:
+            '${preview.message}\n\n'
+            '${preview.canCancel ? "Hoàn tiền: ${preview.refundAmount.toStringAsFixed(0)}đ" : "Không được hoàn tiền"}',
+        confirmText: 'Xác nhận hủy',
+        cancelText: 'Đóng',
+        isDanger: true,
       );
+
+      if (!confirmed || !preview.canCancel) return;
+
+      // Perform cancellation
+      LoadingOverlay.show(context, message: 'Đang hủy booking...');
+
+      try {
+        await ref.read(bookingProvider.notifier).cancelBooking(bookingId);
+
+        LoadingOverlay.hide();
+
+        if (mounted) {
+          await _handleRefresh(); // Refresh timeline data
+          await SuccessDialog.show(
+            context,
+            title: 'Hủy sân thành công!',
+            message: 'Booking đã được hủy. Tiền đã được hoàn vào ví của bạn.',
+          );
+        }
+      } catch (e) {
+        LoadingOverlay.hide();
+
+        if (mounted) {
+          await ErrorDialog.show(
+            context,
+            title: 'Hủy sân thất bại',
+            message: e.toString().replaceAll('Exception: ', ''),
+            errorCode: 'CANCEL_ERROR',
+          );
+        }
+      }
     } catch (e) {
+      LoadingOverlay.hide();
+
       if (!mounted) return;
-      Navigator.pop(context); // Close loading
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi: ${e.toString()}'),
-          backgroundColor: AppTheme.errorRed,
-          behavior: SnackBarBehavior.floating,
-        ),
+
+      await ErrorDialog.show(
+        context,
+        title: 'Lỗi tải thông tin',
+        message: e.toString().replaceAll('Exception: ', ''),
+        errorCode: 'PREVIEW_ERROR',
       );
     }
   }
@@ -681,9 +697,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryBlue,
-            ),
+            colorScheme: const ColorScheme.light(primary: AppTheme.primaryBlue),
           ),
           child: child!,
         );
@@ -693,10 +707,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
       setState(() {
         _startTime = time;
         // Auto adjust end time
-        _endTime = TimeOfDay(
-          hour: (time.hour + 2) % 24,
-          minute: time.minute,
-        );
+        _endTime = TimeOfDay(hour: (time.hour + 2) % 24, minute: time.minute);
       });
     }
   }
@@ -708,9 +719,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryBlue,
-            ),
+            colorScheme: const ColorScheme.light(primary: AppTheme.primaryBlue),
           ),
           child: child!,
         );
@@ -741,7 +750,9 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
         _endTime.minute,
       );
 
-      await ref.read(bookingProvider.notifier).createBooking(
+      await ref
+          .read(bookingProvider.notifier)
+          .createBooking(
             courtId: widget.courtId,
             startTime: startDateTime,
             endTime: endDateTime,
@@ -785,10 +796,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
           children: [
             Text(
               'Đặt sân ${widget.courtName}',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             IconButton(
               icon: const Icon(Icons.close),
@@ -800,10 +808,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
 
         Text(
           'Ngày: ${DateFormat('dd/MM/yyyy').format(widget.selectedDate)}',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[700],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[700]),
         ),
 
         const SizedBox(height: 20),
@@ -835,10 +840,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
           icon: Icons.check,
           onPressed: _handleBooking,
           isLoading: _isLoading,
-          gradientColors: const [
-            AppTheme.primaryBlue,
-            AppTheme.primaryPurple,
-          ],
+          gradientColors: const [AppTheme.primaryBlue, AppTheme.primaryPurple],
           height: 56,
         ),
       ],
@@ -857,18 +859,13 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
         decoration: BoxDecoration(
           color: AppTheme.primaryBlue.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.primaryBlue.withOpacity(0.3),
-          ),
+          border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
@@ -891,10 +888,6 @@ class CreateBookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Create Booking Screen'),
-      ),
-    );
+    return const Scaffold(body: Center(child: Text('Create Booking Screen')));
   }
 }

@@ -143,8 +143,8 @@ class _MainLayoutState extends ConsumerState<MainLayout>
           ],
         ),
         actions: [
-          AnimatedBadge(
-            count: 5, // TODO: Get from notifications provider
+          Badge(
+            label: Text('5'),
             child: IconButton(
               icon: const Icon(Icons.notifications_outlined),
               onPressed: () {

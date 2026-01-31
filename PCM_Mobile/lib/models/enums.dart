@@ -1,48 +1,55 @@
 // SYNCED WITH BACKEND - PCM.API.Models.Enums.cs
 // DO NOT MODIFY ENUM ORDER - Must match backend integer values
 
-enum MemberTier { 
-  standard,  // 0
-  silver,    // 1
-  gold,      // 2
-  diamond    // 3
+enum MemberTier {
+  standard, // 0
+  silver, // 1
+  gold, // 2
+  diamond, // 3
 }
 
 enum TransactionType {
-  deposit,   // 0
-  withdraw,  // 1
-  payment,   // 2
-  refund,    // 3
-  reward     // 4
+  deposit, // 0
+  withdraw, // 1
+  payment, // 2
+  refund, // 3
+  reward, // 4
 }
 
-enum TransactionStatus { 
-  pending,   // 0
+enum TransactionStatus {
+  pending, // 0
   completed, // 1
-  rejected,  // 2
-  failed     // 3
+  rejected, // 2
+  failed, // 3
 }
 
-enum BookingStatus { 
-  holding,        // 0 - Đang giữ chỗ 5 phút
+enum BookingStatus {
+  holding, // 0 - Đang giữ chỗ 5 phút
   pendingPayment, // 1 - Chờ thanh toán
-  confirmed,      // 2 - Đã xác nhận
-  cancelled,      // 3 - Đã hủy
-  completed       // 4 - Hoàn thành
+  confirmed, // 2 - Đã xác nhận
+  cancelled, // 3 - Đã hủy
+  completed, // 4 - Hoàn thành
 }
 
-enum TournamentFormat { 
-  roundRobin,     // 0
-  knockout,       // 1
-  hybrid          // 2
+enum TournamentType {
+  official, // 0 - Giải đấu chính thức do CLB tổ chức
+  challenge1v1, // 1 - Kèo thách đấu 1v1
+  teamBattle, // 2 - Đấu đội/nhóm
+  miniGame, // 3 - Mini game, thử thách nhỏ
 }
 
-enum TournamentStatus { 
-  open,           // 0
-  registering,    // 1
-  drawCompleted,  // 2
-  ongoing,        // 3
-  finished        // 4
+enum TournamentFormat {
+  roundRobin, // 0
+  knockout, // 1
+  hybrid, // 2
+}
+
+enum TournamentStatus {
+  open, // 0
+  registering, // 1
+  drawCompleted, // 2
+  ongoing, // 3
+  finished, // 4
 }
 
 enum WinningSide { none, team1, team2 }
@@ -110,6 +117,34 @@ extension BookingStatusExtension on BookingStatus {
         return 'Đã hủy';
       case BookingStatus.completed:
         return 'Hoàn thành';
+    }
+  }
+}
+
+extension TournamentTypeExtension on TournamentType {
+  String get displayName {
+    switch (this) {
+      case TournamentType.official:
+        return 'Giải đấu chính thức';
+      case TournamentType.challenge1v1:
+        return 'Kèo 1v1';
+      case TournamentType.teamBattle:
+        return 'Đấu Team';
+      case TournamentType.miniGame:
+        return 'Mini Game';
+    }
+  }
+
+  String get icon {
+    switch (this) {
+      case TournamentType.official:
+        return '🏆';
+      case TournamentType.challenge1v1:
+        return '⚔️';
+      case TournamentType.teamBattle:
+        return '👥';
+      case TournamentType.miniGame:
+        return '🎮';
     }
   }
 }

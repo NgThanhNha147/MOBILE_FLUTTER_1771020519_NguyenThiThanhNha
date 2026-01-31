@@ -10,6 +10,7 @@ class AuthState {
   final User? user;
   final Member? member;
   final bool isLoading;
+  final bool isCheckingAuth; // NEW: Prevent redirect during auth check
   final String? error;
 
   AuthState({
@@ -17,6 +18,7 @@ class AuthState {
     this.user,
     this.member,
     this.isLoading = false,
+    this.isCheckingAuth = false,
     this.error,
   });
 
@@ -25,6 +27,7 @@ class AuthState {
     User? user,
     Member? member,
     bool? isLoading,
+    bool? isCheckingAuth,
     String? error,
   }) {
     return AuthState(
@@ -32,6 +35,7 @@ class AuthState {
       user: user ?? this.user,
       member: member ?? this.member,
       isLoading: isLoading ?? this.isLoading,
+      isCheckingAuth: isCheckingAuth ?? this.isCheckingAuth,
       error: error,
     );
   }
@@ -52,7 +56,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       print('💰 Wallet balance updated via SignalR: $newBalance');
       updateWalletBalance(newBalance);
     });
-    
+
     // Listen to notifications
     _signalRService.onNotification.listen((message) {
       print('🔔 Notification: $message');
@@ -61,21 +65,52 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> checkAuthStatus() async {
+    state = state.copyWith(isCheckingAuth: true);
     final isLoggedIn = await _authService.isLoggedIn();
+
     if (isLoggedIn) {
       try {
+        print('🔍 Checking auth status...');
         final userData = await _authService.getMe();
+        print('📦 GetMe response: $userData');
+
+        // Backend returns: { email, fullName, role, member }
+        // NOT: { user: {...}, member: {...} }
+        final user = User(
+          id: userData['email'], // Using email as ID
+          email: userData['email'],
+          fullName: userData['fullName'],
+          role: userData['role'],
+          createdDate: DateTime.now(),
+        );
+
+        // Parse member (may be null for admin)
+        final Member? member = userData['member'] != null
+            ? Member.fromJson(userData['member'])
+            : null;
+
         state = state.copyWith(
           isAuthenticated: true,
-          user: User.fromJson(userData['user']),
-          member: Member.fromJson(userData['member']),
+          user: user,
+          member: member,
+          isCheckingAuth: false,
         );
-        
+
         // Connect to SignalR after successful auth
         await _signalRService.connect();
-      } catch (e) {
-        state = state.copyWith(isAuthenticated: false);
+        print(
+          '✅ Session restored: ${user.email}, role=${user.role}, isAdmin=${user.isAdmin}',
+        );
+      } catch (e, stackTrace) {
+        print('❌ Session invalid or expired: $e');
+        print('📍 Stack trace: $stackTrace');
+        // Clear invalid token
+        state = state.copyWith(isAuthenticated: false, isCheckingAuth: false);
+        await _authService.logout();
       }
+    } else {
+      print('ℹ️ No saved session found');
+      state = state.copyWith(isCheckingAuth: false);
     }
   }
 
@@ -84,27 +119,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final meData = await _authService.login(email, password);
       print('🔑 Me data: $meData');
-      
+
       final user = User(
         id: meData['email'], // Using email as ID since backend doesn't return userId
         email: meData['email'],
         fullName: meData['fullName'],
+        role: meData['role'], // Add role from response
         createdDate: DateTime.now(), // Backend doesn't return this
       );
-      
-      final member = meData['member'] != null ? Member.fromJson(meData['member']) : null;
-      
+
+      final member = meData['member'] != null
+          ? Member.fromJson(meData['member'])
+          : null;
+
       state = state.copyWith(
         isAuthenticated: true,
         user: user,
         member: member,
         isLoading: false,
       );
-      
+
       // Connect to SignalR after login
       await _signalRService.connect();
-      
-      print('✅ Auth state updated: isAuthenticated=${state.isAuthenticated}, user=${user.email}, member=${member?.fullName ?? "null"}');
+
+      print(
+        '✅ Auth state updated: isAuthenticated=${state.isAuthenticated}, user=${user.email}, role=${user.role}, isAdmin=${user.isAdmin}, member=${member?.fullName ?? "null"}',
+      );
     } catch (e) {
       print('❌ Login error: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
