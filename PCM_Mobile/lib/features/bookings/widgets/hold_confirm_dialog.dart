@@ -85,7 +85,7 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
   Future<void> _confirmBooking() async {
     try {
       await ref.read(bookingProvider.notifier).confirmBooking(widget.bookingId);
-      
+
       if (mounted) {
         Navigator.of(context).pop();
         widget.onConfirmed?.call(); // Trigger refresh callback
@@ -99,10 +99,7 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
       }
     }
@@ -110,8 +107,10 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
 
   Future<void> _cancelHold() async {
     try {
-      await ref.read(bookingProvider.notifier).cancelHoldBooking(widget.bookingId);
-      
+      await ref
+          .read(bookingProvider.notifier)
+          .cancelHoldBooking(widget.bookingId);
+
       if (mounted) {
         Navigator.of(context).pop();
         widget.onCancelled?.call(); // Trigger refresh callback
@@ -125,10 +124,7 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
       }
     }
@@ -163,14 +159,12 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _secondsRemaining > 120 
-                    ? Colors.green.shade50 
+                color: _secondsRemaining > 120
+                    ? Colors.green.shade50
                     : Colors.red.shade50,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: _secondsRemaining > 120 
-                      ? Colors.green 
-                      : Colors.red,
+                  color: _secondsRemaining > 120 ? Colors.green : Colors.red,
                   width: 2,
                 ),
               ),
@@ -179,9 +173,7 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
                 children: [
                   Icon(
                     Icons.access_time,
-                    color: _secondsRemaining > 120 
-                        ? Colors.green 
-                        : Colors.red,
+                    color: _secondsRemaining > 120 ? Colors.green : Colors.red,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -189,8 +181,8 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: _secondsRemaining > 120 
-                          ? Colors.green 
+                      color: _secondsRemaining > 120
+                          ? Colors.green
                           : Colors.red,
                     ),
                   ),
@@ -198,16 +190,26 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Booking Details
             _buildInfoRow('Sân', widget.courtName),
             _buildInfoRow('Ngày', dateFormat.format(widget.startTime)),
-            _buildInfoRow('Giờ', '${timeFormat.format(widget.startTime)} - ${timeFormat.format(widget.endTime)}'),
-            const Divider(),
-            _buildInfoRow('Giá tiền', '${widget.totalPrice.toStringAsFixed(0)}đ', isBold: true),
-            _buildInfoRow('Số dư hiện tại', '${widget.currentBalance.toStringAsFixed(0)}đ'),
             _buildInfoRow(
-              'Số dư sau khi đặt', 
+              'Giờ',
+              '${timeFormat.format(widget.startTime)} - ${timeFormat.format(widget.endTime)}',
+            ),
+            const Divider(),
+            _buildInfoRow(
+              'Giá tiền',
+              '${widget.totalPrice.toStringAsFixed(0)}đ',
+              isBold: true,
+            ),
+            _buildInfoRow(
+              'Số dư hiện tại',
+              '${widget.currentBalance.toStringAsFixed(0)}đ',
+            ),
+            _buildInfoRow(
+              'Số dư sau khi đặt',
               '${balanceAfter.toStringAsFixed(0)}đ',
               color: balanceAfter < 0 ? Colors.red : Colors.green,
               isBold: true,
@@ -216,10 +218,7 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _cancelHold,
-          child: const Text('Hủy giữ chỗ'),
-        ),
+        TextButton(onPressed: _cancelHold, child: const Text('Hủy giữ chỗ')),
         ElevatedButton(
           onPressed: _secondsRemaining > 0 ? _confirmBooking : null,
           style: ElevatedButton.styleFrom(
@@ -232,16 +231,18 @@ class _HoldConfirmDialogState extends ConsumerState<HoldConfirmDialog> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? color, bool isBold = false}) {
+  Widget _buildInfoRow(
+    String label,
+    String value, {
+    Color? color,
+    bool isBold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.grey),
-          ),
+          Text(label, style: const TextStyle(color: Colors.grey)),
           Text(
             value,
             style: TextStyle(

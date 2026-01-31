@@ -23,7 +23,7 @@ class AuthService {
       // Get full user and member data
       final meResponse = await dio.get(ApiConstants.getMe);
       print('📦 Me response: ${meResponse.data}');
-      
+
       return meResponse.data;
     } on DioException catch (e) {
       throw _handleError(e);

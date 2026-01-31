@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Glass Card với Glassmorphism effect chuẩn
+/// Monochrome Minimal Card - Flat design with thin borders
 class GlassCard extends StatelessWidget {
   final Widget child;
   final double borderRadius;
@@ -28,60 +28,25 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       margin: margin,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: GestureDetector(
-            onTap: onTap,
-            child: Container(
-              padding: padding ?? const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: gradientColors != null
-                    ? LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: gradientColors!,
-                      )
-                    : LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withOpacity(opacity),
-                          Colors.white.withOpacity(opacity * 0.5),
-                        ],
-                      ),
-                borderRadius: BorderRadius.circular(borderRadius),
-                border:
-                    border ??
-                    Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1.5,
-                    ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black.withOpacity(0.3)
-                        : Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: child,
-            ),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: padding ?? const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(4),
+            border: border ?? Border.all(color: Colors.black, width: 1.0),
           ),
+          child: child,
         ),
       ),
     );
   }
 }
 
-/// Animated Glass Button với Tap Effect
+/// Monochrome Minimal Button - Flat black button
 class GlassButton extends StatefulWidget {
   final String text;
   final VoidCallback onPressed;
@@ -122,7 +87,7 @@ class _GlassButtonState extends State<GlassButton>
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.95,
+      end: 0.98,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
@@ -154,77 +119,42 @@ class _GlassButtonState extends State<GlassButton>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
-          height: widget.height,
           width: widget.width,
+          height: widget.height,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors:
-                  widget.gradientColors ??
-                  [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).primaryColor.withOpacity(0.7),
-                  ],
-            ),
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).primaryColor.withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.black, width: 1.0),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withOpacity(0.1),
-                      Colors.white.withOpacity(0.05),
+          child: Center(
+            child: widget.isLoading
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.0,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.icon != null) ...[
+                        Icon(widget.icon, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        widget.text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                child: Center(
-                  child: widget.isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (widget.icon != null) ...[
-                              Icon(widget.icon, color: Colors.white, size: 20),
-                              const SizedBox(width: 8),
-                            ],
-                            Text(
-                              widget.text,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-            ),
           ),
         ),
       ),
@@ -232,24 +162,91 @@ class _GlassButtonState extends State<GlassButton>
   }
 }
 
-/// Shimmer Loading Skeleton
-class ShimmerLoading extends StatefulWidget {
-  final double width;
-  final double height;
-  final double borderRadius;
+/// Monochrome Animated Counter
+class AnimatedCounter extends StatefulWidget {
+  final double value;
+  final TextStyle? style;
+  final String? prefix;
+  final String? suffix;
+  final int decimals;
+  final Duration duration;
 
-  const ShimmerLoading({
+  const AnimatedCounter({
     super.key,
-    required this.width,
-    required this.height,
-    this.borderRadius = 8,
+    required this.value,
+    this.style,
+    this.prefix,
+    this.suffix,
+    this.decimals = 0,
+    this.duration = const Duration(milliseconds: 800),
   });
 
   @override
-  State<ShimmerLoading> createState() => _ShimmerLoadingState();
+  State<AnimatedCounter> createState() => _AnimatedCounterState();
 }
 
-class _ShimmerLoadingState extends State<ShimmerLoading>
+class _AnimatedCounterState extends State<AnimatedCounter>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  double _previousValue = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    _animation = Tween<double>(
+      begin: _previousValue,
+      end: widget.value,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(AnimatedCounter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      _previousValue = oldWidget.value;
+      _animation = Tween<double>(
+        begin: _previousValue,
+        end: widget.value,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Text(
+          '${widget.prefix ?? ''}${_animation.value.toStringAsFixed(widget.decimals)}${widget.suffix ?? ''}',
+          style: widget.style,
+        );
+      },
+    );
+  }
+}
+
+/// Monochrome Shimmer Loading Effect
+class GlassShimmer extends StatefulWidget {
+  final Widget child;
+  final bool isLoading;
+
+  const GlassShimmer({super.key, required this.child, this.isLoading = true});
+
+  @override
+  State<GlassShimmer> createState() => _GlassShimmerState();
+}
+
+class _GlassShimmerState extends State<GlassShimmer>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -270,149 +267,68 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.isLoading) return widget.child;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.grey[300]!, Colors.grey[100]!, Colors.grey[300]!],
-              stops: [
-                _controller.value - 0.3,
-                _controller.value,
-                _controller.value + 0.3,
-              ].map((e) => e.clamp(0.0, 1.0)).toList(),
-            ),
-          ),
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment(-1.0 - _controller.value * 2, 0),
+              end: Alignment(1.0 - _controller.value * 2, 0),
+              colors: isDark
+                  ? [Color(0xFF0D0D0D), Color(0xFF1A1A1A), Color(0xFF0D0D0D)]
+                  : [Color(0xFFE0E0E0), Color(0xFFF5F5F5), Color(0xFFE0E0E0)],
+            ).createShader(bounds);
+          },
+          child: widget.child,
         );
       },
     );
   }
 }
 
-/// Animated Counter cho số tiền
-class AnimatedCounter extends StatelessWidget {
-  final double value;
-  final TextStyle? style;
-  final String prefix;
-  final String suffix;
-  final int decimals;
+/// Monochrome Badge Widget
+class GlassBadge extends StatelessWidget {
+  final String text;
+  final Color? color;
+  final bool isSmall;
 
-  const AnimatedCounter({
+  const GlassBadge({
     super.key,
-    required this.value,
-    this.style,
-    this.prefix = '',
-    this.suffix = '',
-    this.decimals = 0,
+    required this.text,
+    this.color,
+    this.isSmall = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: value),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Text(
-          '$prefix${value.toStringAsFixed(decimals)}$suffix',
-          style:
-              style ??
-              const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-        );
-      },
-    );
-  }
-}
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final badgeColor =
+        color ?? (isDark ? Color(0xFF2D2D2D) : Color(0xFFE0E0E0));
 
-/// Badge với Animation
-class AnimatedBadge extends StatefulWidget {
-  final int count;
-  final Widget child;
-
-  const AnimatedBadge({super.key, required this.count, required this.child});
-
-  @override
-  State<AnimatedBadge> createState() => _AnimatedBadgeState();
-}
-
-class _AnimatedBadgeState extends State<AnimatedBadge>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.2,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
-  }
-
-  @override
-  void didUpdateWidget(AnimatedBadge oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.count != oldWidget.count && widget.count > oldWidget.count) {
-      _controller.forward().then((_) => _controller.reverse());
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        widget.child,
-        if (widget.count > 0)
-          Positioned(
-            right: -8,
-            top: -8,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.red.withOpacity(0.5),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                child: Center(
-                  child: Text(
-                    widget.count > 99 ? '99+' : widget.count.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmall ? 6 : 8,
+        vertical: isSmall ? 2 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? Color(0xFF1A1A1A) : Colors.white,
+        border: Border.all(color: badgeColor, width: 0.5),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isDark ? Colors.white : Color(0xFF1A1A1A),
+          fontSize: isSmall ? 10 : 11,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 }

@@ -130,3 +130,4 @@ D:\LTAndroi\baikiemtra\PCM_Backend\PCM.API\obj\Debug\net9.0\refint\PCM.API.dll
 D:\LTAndroi\baikiemtra\PCM_Backend\PCM.API\obj\Debug\net9.0\PCM.API.pdb
 D:\LTAndroi\baikiemtra\PCM_Backend\PCM.API\obj\Debug\net9.0\PCM.API.genruntimeconfig.cache
 D:\LTAndroi\baikiemtra\PCM_Backend\PCM.API\obj\Debug\net9.0\ref\PCM.API.dll
+D:\LTAndroi\baikiemtra\PCM_Backend\PCM.API\obj\Debug\net9.0\PCM.API.sourcelink.json

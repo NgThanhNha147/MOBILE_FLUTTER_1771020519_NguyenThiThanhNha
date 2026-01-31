@@ -932,9 +932,13 @@ public class BookingsController : ControllerBase
             
             return Ok(ApiResponse<object>.SuccessResponse(
                 "Xác nhận đặt sân thành công!", 
-                new { booking, newBalance = member.WalletBalance, newTier = member.Tier }));
+                new { 
+                    bookingId = booking.Id,
+                    newBalance = member.WalletBalance, 
+                    newTier = member.Tier 
+                }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return StatusCode(500, ApiResponse<object>.ErrorResponse(

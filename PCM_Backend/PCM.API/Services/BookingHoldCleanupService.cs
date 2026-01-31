@@ -48,13 +48,15 @@ public class BookingHoldCleanupService : BackgroundService
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<PcmHub>>();
 
-        var expiredTime = DateTime.Now.Subtract(_holdTimeout);
+        var now = DateTime.Now;
 
-        // Find all holding bookings older than 5 minutes
+        // Find all holding bookings where HoldExpiresAt has passed
         var expiredHoldings = await context.Bookings
             .Include(b => b.Member)
             .Include(b => b.Court)
-            .Where(b => b.Status == BookingStatus.Holding && b.CreatedDate < expiredTime)
+            .Where(b => b.Status == BookingStatus.Holding 
+                && b.HoldExpiresAt.HasValue 
+                && b.HoldExpiresAt.Value < now)
             .ToListAsync();
 
         if (expiredHoldings.Any())

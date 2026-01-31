@@ -4,12 +4,16 @@ class User {
   final String id;
   final String email;
   final String fullName;
+  final String? role; // Admin or Member
   final DateTime createdDate;
+
+  bool get isAdmin => role?.toLowerCase() == 'admin';
 
   User({
     required this.id,
     required this.email,
     required this.fullName,
+    this.role,
     required this.createdDate,
   });
 
@@ -18,6 +22,7 @@ class User {
       id: json['id'],
       email: json['email'],
       fullName: json['fullName'],
+      role: json['role'],
       createdDate: DateTime.parse(json['createdDate']),
     );
   }
@@ -27,6 +32,7 @@ class User {
       'id': id,
       'email': email,
       'fullName': fullName,
+      'role': role,
       'createdDate': createdDate.toIso8601String(),
     };
   }
@@ -111,7 +117,9 @@ class LoginResponse {
       email: json['email'],
       fullName: json['fullName'],
       role: json['role'],
-      memberId: json['memberId'] != null && json['memberId'] != 0 ? json['memberId'] : null,
+      memberId: json['memberId'] != null && json['memberId'] != 0
+          ? json['memberId']
+          : null,
       walletBalance: (json['walletBalance'] as num?)?.toDouble() ?? 0.0,
     );
   }

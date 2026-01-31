@@ -10,6 +10,7 @@ import '../../features/wallet/deposit_screen.dart';
 import '../../features/bookings/bookings_screen.dart';
 import '../../features/bookings/create_booking_screen.dart';
 import '../../../features/tournaments/tournaments_screen.dart';
+import '../../../features/tournaments/tournament_detail_screen.dart';
 import '../../features/members/members_screen.dart';
 import '../../features/members/member_profile_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
@@ -35,9 +36,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: notifier,
     redirect: (context, state) {
       final isAuthenticated = authState.isAuthenticated;
+      final isCheckingAuth = authState.isCheckingAuth;
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
 
-      print('🔄 Router redirect: location=${state.matchedLocation}, isAuth=$isAuthenticated, isAuthRoute=$isAuthRoute');
+      print(
+        '🔄 Router redirect: location=${state.matchedLocation}, isAuth=$isAuthenticated, checking=$isCheckingAuth',
+      );
+
+      // Wait for auth check to complete before redirecting
+      if (isCheckingAuth) {
+        print('⏳ Waiting for auth check...');
+        return null; // Don't redirect while checking
+      }
 
       // Redirect to login if not authenticated
       if (!isAuthenticated && !isAuthRoute) {

@@ -163,29 +163,143 @@ public static class DataSeeder
         {
             var tournaments = new[]
             {
+                // OFFICIAL TOURNAMENTS (Admin created)
                 new Tournament
                 {
-                    Name = "Summer Open 2026",
-                    StartDate = new DateTime(2026, 1, 1),
-                    EndDate = new DateTime(2026, 1, 15),
+                    Name = "Giải Pickleball Mùa Xuân 2026",
+                    Description = "Giải đấu lớn với giải thưởng hấp dẫn dành cho các tay vợt xuất sắc",
+                    Type = TournamentType.Official,
+                    StartDate = DateTime.Now.AddDays(7),
+                    EndDate = DateTime.Now.AddDays(9),
                     Format = TournamentFormat.Knockout,
-                    EntryFee = 500000,
-                    PrizePool = 10000000,
-                    Status = TournamentStatus.Finished
+                    Status = TournamentStatus.Open,
+                    MaxParticipants = 16,
+                    EntryFee = 200000,
+                    PrizePool = 5000000,
+                    CreatorId = null  // Admin created
                 },
                 new Tournament
                 {
-                    Name = "Winter Cup 2026",
-                    StartDate = new DateTime(2026, 2, 1),
-                    EndDate = new DateTime(2026, 2, 28),
-                    Format = TournamentFormat.RoundRobin,
+                    Name = "Giải Vô Địch Mùa Hè 2026",
+                    Description = "Giải đấu chính thức lớn nhất năm với tổng giải thưởng lên đến 20 triệu",
+                    Type = TournamentType.Official,
+                    StartDate = DateTime.Now.AddDays(14),
+                    EndDate = DateTime.Now.AddDays(16),
+                    Format = TournamentFormat.Knockout,
+                    Status = TournamentStatus.Open,
+                    MaxParticipants = 32,
                     EntryFee = 300000,
-                    PrizePool = 5000000,
-                    Status = TournamentStatus.Registering
+                    PrizePool = 20000000,
+                    CreatorId = null
+                },
+                new Tournament
+                {
+                    Name = "Giải Giao Hữu Tháng 2",
+                    Description = "Giải đấu giao hữu, thi đấu vòng tròn để mọi người được gặp nhau",
+                    Type = TournamentType.Official,
+                    StartDate = DateTime.Now.AddDays(-10),
+                    EndDate = DateTime.Now.AddDays(-8),
+                    Format = TournamentFormat.RoundRobin,
+                    Status = TournamentStatus.Finished,
+                    MaxParticipants = 20,
+                    EntryFee = 100000,
+                    PrizePool = 2000000,
+                    CreatorId = null
+                },
+                
+                // CHALLENGE 1V1 (User created)
+                new Tournament
+                {
+                    Name = "⚔️ Thách đấu từ Nguyễn Văn A",
+                    Description = "Ai dám đấu với tôi không? Cược 100k!",
+                    Type = TournamentType.Challenge1v1,
+                    StartDate = DateTime.Now.AddHours(2),
+                    EndDate = DateTime.Now.AddHours(4),
+                    Format = TournamentFormat.Knockout,
+                    Status = TournamentStatus.Open,
+                    MaxParticipants = 2,
+                    EntryFee = 100000,
+                    PrizePool = 160000,  // 80% of 200k
+                    CreatorId = 1
+                },
+                new Tournament
+                {
+                    Name = "⚔️ Challenge từ Pro Player",
+                    Description = "Thử tài với cao thủ, không cược tiền",
+                    Type = TournamentType.Challenge1v1,
+                    StartDate = DateTime.Now.AddDays(1),
+                    EndDate = DateTime.Now.AddDays(1).AddHours(2),
+                    Format = TournamentFormat.Knockout,
+                    Status = TournamentStatus.Open,
+                    MaxParticipants = 2,
+                    EntryFee = 0,
+                    PrizePool = 0,
+                    CreatorId = 1
+                },
+                
+                // TEAM BATTLE (User created)
+                new Tournament
+                {
+                    Name = "👥 Đấu đôi cuối tuần",
+                    Description = "Giải đấu đôi vui vẻ, kèo nhỏ cho anh em giao lưu",
+                    Type = TournamentType.TeamBattle,
+                    StartDate = DateTime.Now.AddDays(3),
+                    EndDate = DateTime.Now.AddDays(3).AddHours(6),
+                    Format = TournamentFormat.Knockout,
+                    Status = TournamentStatus.Open,
+                    MaxParticipants = 8,  // 4 teams x 2 people
+                    EntryFee = 150000,
+                    PrizePool = 960000,  // 80% of 1.2M
+                    CreatorId = 1
+                },
+                new Tournament
+                {
+                    Name = "👥 Giải Đấu Team Hè 2026",
+                    Description = "Giải đấu theo đội, mỗi team 4 người. Thi đấu vòng tròn và loại trực tiếp",
+                    Type = TournamentType.TeamBattle,
+                    StartDate = DateTime.Now.AddDays(-2),
+                    EndDate = DateTime.Now.AddDays(5),
+                    Format = TournamentFormat.Hybrid,
+                    Status = TournamentStatus.Ongoing,
+                    MaxParticipants = 16,
+                    EntryFee = 200000,
+                    PrizePool = 2560000,
+                    CreatorId = 1
+                },
+                
+                // MINI GAME (Admin created)
+                new Tournament
+                {
+                    Name = "🎮 Mini Game Cuối Tuần",
+                    Description = "12 người tham gia, lệ phí 50k, giải thưởng 600k cho người chiến thắng",
+                    Type = TournamentType.MiniGame,
+                    StartDate = DateTime.Now.AddDays(1),
+                    EndDate = DateTime.Now.AddDays(2),
+                    Format = TournamentFormat.RoundRobin,
+                    Status = TournamentStatus.Open,
+                    MaxParticipants = 12,
+                    EntryFee = 50000,
+                    PrizePool = 600000,
+                    CreatorId = null  // Admin created
+                },
+                new Tournament
+                {
+                    Name = "🎮 Thử thách giao bóng 50 quả",
+                    Description = "Ai giao được 50 quả vào ô chính xác nhất sẽ nhận 500k",
+                    Type = TournamentType.MiniGame,
+                    StartDate = DateTime.Now,
+                    EndDate = DateTime.Now.AddDays(7),
+                    Format = TournamentFormat.Knockout,
+                    Status = TournamentStatus.Ongoing,
+                    MaxParticipants = 12,
+                    EntryFee = 50000,
+                    PrizePool = 500000,
+                    CreatorId = null
                 }
             };
+
             context.Tournaments.AddRange(tournaments);
-            await context.SaveChangesAsync();
+            context.SaveChanges();
         }
         
         // Seed News

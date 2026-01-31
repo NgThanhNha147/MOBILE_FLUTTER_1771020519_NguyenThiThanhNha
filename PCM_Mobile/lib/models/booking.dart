@@ -45,8 +45,8 @@ class Booking {
       totalPrice: (json['totalPrice'] as num).toDouble(),
       status: parseStatus(json['status']),
       recurrenceRule: json['recurrenceRule'],
-      createdDate: json['createdDate'] != null 
-          ? DateTime.parse(json['createdDate']) 
+      createdDate: json['createdDate'] != null
+          ? DateTime.parse(json['createdDate'])
           : DateTime.now(),
       courtName: json['courtName'],
       memberName: json['memberName'],

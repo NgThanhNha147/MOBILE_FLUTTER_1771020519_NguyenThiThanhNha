@@ -2,58 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class AppTheme {
-  // Primary Colors - Modern Energetic Gradient
-  static const Color primaryBlue = Color(0xFF1E88E5);
-  static const Color primaryPurple = Color(0xFF7C4DFF);
-  static const Color secondaryTeal = Color(0xFF00BCD4);
-  static const Color secondaryPink = Color(0xFFFF4081);
+  // MONOCHROME MINIMAL - High Contrast, Clear Readability
+  static const Color primaryBlue = Color(
+    0xFF111111,
+  ); // Primary text - near black
+  static const Color primaryPurple = Color(0xFF111111); // Primary text
+  static const Color secondaryTeal = Color(0xFF666666); // Secondary text
+  static const Color secondaryPink = Color(0xFF666666); // Secondary text
 
-  // Accent Colors
-  static const Color accentOrange = Color(0xFFFF9800);
-  static const Color accentGreen = Color(0xFF4CAF50);
-  static const Color accentYellow = Color(0xFFFFC107);
+  // Accent Colors - Grayscale with good contrast
+  static const Color accentOrange = Color(0xFF333333); // Dark gray
+  static const Color accentGreen = Color(0xFF333333); // Dark gray
+  static const Color accentYellow = Color(
+    0xFF999999,
+  ); // Light gray for disabled
 
-  // Status Colors
-  static const Color successGreen = Color(0xFF4CAF50);
-  static const Color warningOrange = Color(0xFFFF9800);
-  static const Color errorRed = Color(0xFFE53935);
-  static const Color infoBlue = Color(0xFF2196F3);
+  // Status Colors - Clear contrast
+  static const Color successGreen = Color(0xFF111111); // Black for text
+  static const Color warningOrange = Color(0xFF666666); // Medium gray
+  static const Color errorRed = Color(0xFF000000); // Pure black for errors
+  static const Color infoBlue = Color(0xFF111111); // Black for info icons
 
-  // Tier Colors
-  static const Color bronzeTier = Color(0xFFCD7F32);
-  static const Color silverTier = Color(0xFFC0C0C0);
-  static const Color goldTier = Color(0xFFFFD700);
-  static const Color platinumTier = Color(0xFFE5E4E2);
+  // Tier Colors - Clear progression
+  static const Color bronzeTier = Color(0xFF666666); // Medium gray
+  static const Color silverTier = Color(0xFF999999); // Light gray
+  static const Color goldTier = Color(0xFFCCCCCC); // Very light gray
+  static const Color platinumTier = Color(0xFFE6E6E6); // Near white
 
-  // Gradients
+  // Gradients - Subtle gray transitions
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryBlue, primaryPurple],
+    colors: [Color(0xFF111111), Color(0xFF333333)],
   );
 
   static const LinearGradient secondaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [secondaryTeal, secondaryPink],
+    colors: [Color(0xFF666666), Color(0xFF999999)],
   );
 
   static const LinearGradient successGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+    colors: [Color(0xFF111111), Color(0xFF333333)],
   );
 
   static const LinearGradient warningGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
+    colors: [Color(0xFF666666), Color(0xFF999999)],
   );
 
   static const LinearGradient errorGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFE53935), Color(0xFFEF5350)],
+    colors: [Color(0xFF000000), Color(0xFF111111)],
   );
 
   // Light Theme

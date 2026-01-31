@@ -13,11 +13,20 @@ public class Tournament
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
     
+    [MaxLength(500)]
+    public string? Description { get; set; }
+    
+    public TournamentType Type { get; set; } = TournamentType.Official;
+    
     public DateTime StartDate { get; set; }
     
     public DateTime EndDate { get; set; }
     
     public TournamentFormat Format { get; set; }
+    
+    public int MaxParticipants { get; set; } = 16;
+    
+    public int? CreatorId { get; set; }  // Member tạo giải (cho Challenge/MiniGame)
     
     [Column(TypeName = "decimal(18,2)")]
     public decimal EntryFee { get; set; }

@@ -34,6 +34,14 @@ public enum BookingStatus
     Completed        // Đã hoàn thành (sau thời gian chơi)
 }
 
+public enum TournamentType
+{
+    Official,      // Giải đấu chính thức do CLB tổ chức
+    Challenge1v1,  // Kèo thách đấu 1v1 do người chơi tạo
+    TeamBattle,    // Đấu đội/nhóm
+    MiniGame       // Mini game, thử thách nhỏ
+}
+
 public enum TournamentFormat
 {
     RoundRobin,
@@ -43,11 +51,11 @@ public enum TournamentFormat
 
 public enum TournamentStatus
 {
-    Open,
-    Registering,
-    DrawCompleted,
-    Ongoing,
-    Finished
+    Open,          // Mở đăng ký
+    Registering,   // Đang đăng ký
+    DrawCompleted, // Đã bốc thăm
+    Ongoing,       // Đang diễn ra
+    Finished       // Đã kết thúc
 }
 
 public enum WinningSide
