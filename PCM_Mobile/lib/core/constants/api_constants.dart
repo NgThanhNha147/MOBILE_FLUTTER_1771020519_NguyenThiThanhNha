@@ -1,8 +1,8 @@
 class ApiConstants {
-  // Base URL - Production server
-  static String get baseUrl {
-    return 'http://160.250.133.197:5001';
-  }
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:5283',
+  );
 
   // Auth endpoints
   static const String login = '/api/auth/login';

@@ -1,308 +1,109 @@
-# PCM - Hệ thống quản lý CLB Pickleball "Vợt Thủ Phố Núi"
+# Pickleball Club Management
 
-## Thông tin sinh viên
-- **Họ và tên:** Nguyễn Thị Thanh Nhã
-- **MSSV:** 1771020519
-- **3 số cuối MSSV:** 519 (được sử dụng trong tên bảng database)
+Ứng dụng quản lý câu lạc bộ pickleball gồm mobile app dành cho thành viên và REST API xử lý nghiệp vụ. Dự án được thực hiện trong quá trình học Flutter, với mục tiêu xây dựng một luồng hoàn chỉnh từ giao diện, API đến cơ sở dữ liệu.
 
-## Cấu trúc project
+## Bài toán
+
+Thành viên có thể xem lịch sân, giữ chỗ, thanh toán bằng số dư trong hệ thống và theo dõi các giải đấu. Những thay đổi quan trọng như trạng thái booking, số dư ví và thông báo được cập nhật theo thời gian thực.
+
+Phần mình tập trung nhiều nhất là luồng đặt sân: một khung giờ được giữ tạm trong 5 phút trước khi xác nhận. Backend kiểm tra trùng lịch và số dư, còn background service tự giải phóng các lượt giữ chỗ đã hết hạn.
+
+## Chức năng chính
+
+- Đăng ký, đăng nhập bằng JWT và phân quyền theo vai trò
+- Xem lịch sân và trạng thái từng khung giờ
+- Giữ chỗ 5 phút, xác nhận hoặc hủy booking
+- Đặt lịch định kỳ cho thành viên đủ hạng
+- Hủy sân và tính mức hoàn tiền theo thời gian
+- Quản lý số dư, yêu cầu nạp tiền và lịch sử giao dịch
+- Quản lý thành viên, giải đấu, tin tức và thông báo
+- Đồng bộ lịch, ví và thông báo bằng SignalR
+
+## Công nghệ
+
+| Thành phần | Công nghệ |
+| --- | --- |
+| Mobile | Flutter, Dart, Riverpod, Dio, GoRouter |
+| Backend | ASP.NET Core 9, Entity Framework Core, Identity |
+| Database | MySQL |
+| Realtime | SignalR |
+| Authentication | JWT Bearer |
+
+## Cấu trúc
+
+```text
+PCM_Backend/PCM.API/   ASP.NET Core Web API
+PCM_Mobile/            Flutter application
 ```
-├── PCM_Backend/         # ASP.NET Core Web API
-│   └── PCM.API/
-├── PCM_Mobile/          # Flutter Mobile App
-└── README.md
+
+Backend được chia theo controller, DTO, model và service. Mobile app tách phần gọi API, state management, model và màn hình theo từng nhóm chức năng.
+
+## Chạy dự án ở local
+
+### 1. Chuẩn bị
+
+- .NET SDK 9
+- Flutter SDK tương thích Dart 3.10 trở lên
+- MySQL
+
+### 2. Cấu hình backend
+
+Connection string mặc định dùng MySQL tại local và database `pcm_db_519`. Có thể ghi đè cấu hình bằng biến môi trường:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection="server=localhost;port=3306;database=pcm_db_519;user=root;password=YOUR_PASSWORD;"
+$env:Jwt__Key="YOUR_LOCAL_DEVELOPMENT_KEY_AT_LEAST_32_CHARACTERS"
 ```
 
-## Backend - ASP.NET Core Web API
+JWT key không được lưu trong repository. Mỗi môi trường cần cung cấp key riêng.
 
-### Yêu cầu hệ thống
-- .NET SDK 9.0 hoặc cao hơn
-- MySQL/MariaDB (XAMPP)
-- EF Core Tools
+Khởi động API:
 
-### Cài đặt .NET 9.0 Runtime (nếu chưa có)
-Tải và cài đặt từ: https://dotnet.microsoft.com/download/dotnet/9.0
-
-### Cài đặt EF Core Tools
-```bash
-dotnet tool install --global dotnet-ef --version 9.0.0
-```
-
-### Cấu hình Database
-1. Mở XAMPP và start MySQL
-2. Database sẽ được tự động tạo với tên: `pcm_db_519`
-3. Connection string trong `appsettings.json`:
-```json
-"server=localhost;port=3306;database=pcm_db_519;user=root;password=;"
-```
-
-### Chạy Migration và Seed Data
-```bash
+```powershell
 cd PCM_Backend/PCM.API
-dotnet ef migrations add InitialCreate
-dotnet ef database update
-```
-
-### Chạy Backend API
-```bash
-cd PCM_Backend/PCM.API
+dotnet restore
 dotnet run
 ```
 
-API sẽ chạy tại: `http://localhost:5000` và `https://localhost:5001`
-Swagger UI: `https://localhost:5001/swagger`
+Ở profile mặc định, API chạy tại `http://localhost:5283` và Swagger được mở tại `http://localhost:5283/swagger` trong môi trường Development. Migration và dữ liệu demo được áp dụng khi ứng dụng khởi động.
 
-### Tài khoản mẫu sau khi seed data
+### 3. Chạy Flutter app
 
-**Admin** (Nguyễn Thị Thanh Nhã - MSSV 1771020519):
-- Email: admin@pcm.com
-- Password: Admin@123
-- Wallet: 10,000,000đ
-- Tier: Diamond
-
-**Treasurer**:
-- Email: treasurer@pcm.com
-- Password: Treasurer@123
-- Wallet: 5,000,000đ
-
-**Referee**:
-- Email: referee@pcm.com
-- Password: Referee@123
-- Wallet: 3,000,000đ
-
-**20 Members** (member1@pcm.com đến member20@pcm.com):
-- Password: Member1@123, Member2@123, ...
-- Wallet: 2,000,000đ - 10,000,000đ (random)
-
-### API Endpoints chính
-
-**Auth:**
-- POST `/api/auth/login` - Đăng nhập
-- POST `/api/auth/register` - Đăng ký
-- GET `/api/auth/me` - Thông tin user hiện tại
-
-**Wallet:**
-- POST `/api/wallet/deposit` - Yêu cầu nạp tiền
-- GET `/api/wallet/transactions` - Lịch sử giao dịch
-- PUT `/api/admin/wallet/approve/{id}` - Admin duyệt nạp tiền
-
-**Courts:**
-- GET `/api/courts` - Danh sách sân
-
-**Bookings:**
-- GET `/api/bookings/calendar` - Lịch đặt sân
-- POST `/api/bookings` - Đặt sân mới
-- POST `/api/bookings/cancel/{id}` - Hủy sân
-- GET `/api/bookings/my-bookings` - Lịch sử đặt sân
-
-**Members:**
-- GET `/api/members` - Danh sách thành viên
-- GET `/api/members/{id}/profile` - Profile thành viên
-
-**News:**
-- GET `/api/news` - Tin tức
-
-**Notifications:**
-- GET `/api/notifications` - Thông báo của tôi
-- PUT `/api/notifications/{id}/mark-read` - Đánh dấu đã đọc
-
-**SignalR Hub:**
-- `/pcmhub` - Real-time notifications và updates
-
----
-
-## Mobile - Flutter App
-
-### Yêu cầu
-- Flutter SDK 3.38.0 trở lên
-- Dart 3.10.0 trở lên
-- Android Studio / VS Code
-- Android Emulator hoặc thiết bị thật
-
-### Cài đặt dependencies
-```bash
-cd PCM_Mobile/pcm_mobile
+```powershell
+cd PCM_Mobile
 flutter pub get
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5283
 ```
 
-### Cấu hình API URL
-Mở file `lib/core/constants/api_constants.dart` và cập nhật:
-```dart
-// Nếu chạy trên Android Emulator:
-static const String baseUrl = 'http://10.0.2.2:5000/api';
+`10.0.2.2` là địa chỉ truy cập máy host từ Android Emulator. Khi chạy trên thiết bị thật, thay bằng địa chỉ IP trong mạng nội bộ của máy chạy backend.
 
-// Nếu chạy trên thiết bị thật hoặc iOS Simulator:
-static const String baseUrl = 'http://192.168.x.x:5000/api';
-```
+## Tài khoản demo
 
-### Chạy app
-```bash
-flutter run
-```
+| Vai trò | Email | Mật khẩu |
+| --- | --- | --- |
+| Admin | `admin@pcm.com` | `Admin@123` |
+| Treasurer | `treasurer@pcm.com` | `Treasurer@123` |
+| Referee | `referee@pcm.com` | `Referee@123` |
+| Member | `member1@pcm.com` | `Member1@123` |
 
-### Tính năng chính
+Các tài khoản trên chỉ được tạo để chạy và trình bày dự án ở môi trường local.
 
-1. **Authentication**
-   - Đăng nhập / Đăng ký
-   - JWT Token authentication
-   - Auto refresh khi hết hạn
+## Một số quyết định kỹ thuật
 
-2. **Dashboard**
-   - Hiển thị số dư ví
-   - Thống kê: Booking, Tournaments, Rank
-   - Tin tức mới nhất
+- Booking ở trạng thái `Holding` chưa trừ tiền; số dư được kiểm tra lại khi người dùng xác nhận.
+- Background service quét và hủy các lượt giữ chỗ hết hạn để khung giờ có thể được đặt lại.
+- Các thao tác ảnh hưởng đến ví và booking sử dụng database transaction nhằm giữ dữ liệu nhất quán.
+- SignalR gửi cập nhật đến đúng người dùng hoặc broadcast thay đổi lịch cho các client đang kết nối.
+- JWT được lưu bằng secure storage trên mobile và tự động gắn vào request qua Dio interceptor.
 
-3. **Wallet (Ví điện tử)**
-   - Hiển thị số dư
-   - Yêu cầu nạp tiền (kèm ảnh chứng minh)
-   - Lịch sử giao dịch
-   - Filter theo loại giao dịch
+## Hướng phát triển
 
-4. **Booking (Đặt sân)**
-   - Calendar view xem lịch sân
-   - Đặt sân mới (tự động trừ tiền từ ví)
-   - Hủy sân (hoàn tiền theo chính sách)
-   - Xem lịch sử đặt sân
+- Bổ sung automated tests cho booking, refund và authorization
+- Tích hợp cổng thanh toán thay cho quy trình nạp tiền mô phỏng
+- Đóng gói backend bằng Docker và triển khai môi trường demo
+- Bổ sung ảnh chụp màn hình và video demo ngắn
 
-5. **Members**
-   - Danh sách thành viên
-   - Tìm kiếm thành viên
-   - Xem profile và lịch sử thi đấu
+## Tác giả
 
-6. **Tournaments**
-   - Danh sách giải đấu
-   - Chi tiết giải
-   - Tham gia giải (trừ Entry Fee)
-   - Xem bracket và kết quả
-
-7. **Notifications**
-   - Danh sách thông báo
-   - Real-time updates (SignalR)
-   - Badge số lượng chưa đọc
-
-8. **Admin Features**
-   - Duyệt yêu cầu nạp tiền
-   - Dashboard thống kê doanh thu
-   - Quản lý giải đấu
-
-### Packages sử dụng
-- **dio**: HTTP client
-- **riverpod**: State management
-- **go_router**: Navigation
-- **flutter_secure_storage**: Lưu JWT token
-- **signalr_netcore**: Real-time SignalR
-- **table_calendar**: Calendar view
-- **fl_chart**: Charts và biểu đồ
-- **image_picker**: Upload ảnh
-- **cached_network_image**: Cache ảnh
-
----
-
-## Database Schema
-
-Tất cả bảng bắt đầu với prefix **519** (3 số cuối MSSV):
-
-- `519_Members` - Thông tin thành viên
-- `519_WalletTransactions` - Giao dịch ví điện tử
-- `519_News` - Tin tức
-- `519_Courts` - Sân đấu
-- `519_Bookings` - Đặt sân
-- `519_Tournaments` - Giải đấu
-- `519_TournamentParticipants` - Người tham gia giải
-- `519_Matches` - Trận đấu
-- `519_Notifications` - Thông báo
-
----
-
-## Luồng hoạt động chính
-
-### 1. Đăng nhập → Xem Dashboard
-```
-User mở app → Login → JWT Token được lưu 
-→ Dashboard hiển thị số dư ví, rank, bookings sắp tới
-```
-
-### 2. Nạp tiền vào ví
-```
-User → Wallet → Tap "Nạp tiền" → Nhập số tiền + upload ảnh CK
-→ API tạo WalletTransaction (Status: Pending)
-→ Admin vào app → Approve transaction
-→ Số dư ví tăng → User nhận notification (SignalR)
-```
-
-### 3. Đặt sân
-```
-User → Bookings → Calendar → Chọn slot trống → Chọn Court
-→ API check ví đủ tiền → Tạo Booking → Trừ tiền ví
-→ Create WalletTransaction (Type: Payment)
-→ Broadcast UpdateCalendar (SignalR) → All users thấy slot đã đặt
-→ User nhận notification "Đặt sân thành công"
-```
-
-### 4. Tham gia giải đấu
-```
-User → Tournaments → Chọn giải → Tap "Tham gia"
-→ API check ví đủ Entry Fee → Trừ tiền → Create TournamentParticipant
-→ User nhận notification "Đã tham gia giải"
-```
-
----
-
-## Tính năng nâng cao đã implement
-
-✅ **Real-time với SignalR**
-- Notifications tức thì
-- Calendar auto-update khi có booking mới
-- Match score live updates
-
-✅ **Wallet System**
-- Giao dịch an toàn với Database Transaction
-- Tự động update Tier dựa trên TotalSpent
-- Refund policy khi hủy sân
-
-✅ **Smart Booking**
-- Check trùng lịch
-- Tính giá tự động theo giờ
-- Hold slot mechanism (5 phút)
-
-✅ **Data Seeding**
-- Admin là sinh viên (Nguyễn Thị Thanh Nhã - 1771020519)
-- 20 members với ví và tier khác nhau
-- 2 tournaments mẫu
-- 4 courts
-- News mẫu
-
----
-
-## Video Demo
-
-Luồng demo:
-1. Mở app → Đăng nhập (admin@pcm.com)
-2. Xem Dashboard → Số dư ví 10,000,000đ
-3. Vào Wallet → Xem lịch sử giao dịch
-4. Vào Bookings → Xem calendar → Đặt sân mới
-5. Ví giảm xuống → Notification hiện ra
-6. Vào Members → Xem danh sách thành viên
-7. Admin: Approve deposit request từ user khác
-8. Xem Tournaments → Chi tiết giải
-
----
-
-## Lưu ý khi chấm bài
-
-1. **Cần start MySQL (XAMPP) trước khi chạy Backend**
-2. **Cần chạy Backend trước khi chạy Mobile app**
-3. **Cấu hình đúng API URL trong Flutter (10.0.2.2 cho emulator)**
-4. **Tất cả bảng có prefix 519** (3 số cuối MSSV)
-5. **Admin account là thông tin sinh viên thật**
-
----
-
-## Contact
-- Sinh viên: Nguyễn Thị Thanh Nhã
-- MSSV: 1771020519
-- GitHub: [Link repository]
-
----
-
-**Ngày hoàn thành:** 27/01/2026
+Nguyễn Thị Thanh Nhã
+GitHub: [NgThanhNha147](https://github.com/NgThanhNha147)

@@ -12,8 +12,8 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add DbContext with MySQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "server=localhost;port=3306;database=pcm_db;user=root;password=;";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
@@ -31,7 +31,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // Add JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong519";
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
+{
+    throw new InvalidOperationException("Jwt:Key must be configured with at least 32 characters.");
+}
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PCM_API";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "PCM_Mobile";
 

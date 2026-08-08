@@ -845,7 +845,7 @@ await Clients.Group($"match_{matchId}").SendAsync("UpdateMatchScore", score1, sc
     "DefaultConnection": "server=localhost;port=3306;database=pcm_db_519;user=root;password=;"
   },
   "Jwt": {
-    "Key": "YourSuperSecretKeyThatIsAtLeast32CharactersLong519NhaNguyenThiThanhNha",
+    "Key": "YOUR_LOCAL_DEVELOPMENT_KEY_AT_LEAST_32_CHARACTERS",
     "Issuer": "PCM_API_519",
     "Audience": "PCM_Mobile_519"
   }

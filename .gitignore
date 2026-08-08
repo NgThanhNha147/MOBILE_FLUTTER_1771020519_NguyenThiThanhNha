@@ -1,0 +1,26 @@
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.suo
+
+# Flutter and Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/build/
+**/.packages
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local configuration and secrets
+*.local.json
+.env
+.env.*
+!.env.example
+
