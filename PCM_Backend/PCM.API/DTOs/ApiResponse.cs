@@ -17,7 +17,7 @@ public class ApiResponse<T>
             Success = true,
             Message = message,
             Data = data,
-            Timestamp = DateTime.Now
+            Timestamp = DateTime.UtcNow
         };
     }
     
@@ -29,7 +29,7 @@ public class ApiResponse<T>
             Message = message,
             ErrorCode = errorCode,
             Errors = errors,
-            Timestamp = DateTime.Now
+            Timestamp = DateTime.UtcNow
         };
     }
 }

@@ -190,14 +190,14 @@ public class BookingsController : ControllerBase
                 "Đặt sân thành công!", 
                 new { booking, newBalance = member.WalletBalance }));
         }
-        catch (DbUpdateException dbEx)
+        catch (DbUpdateException)
         {
             await transaction.RollbackAsync();
             return StatusCode(500, ApiResponse<object>.ErrorResponse(
                 "Lỗi cơ sở dữ liệu. Vui lòng thử lại!", 
                 "DATABASE_ERROR"));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return StatusCode(500, ApiResponse<object>.ErrorResponse(
@@ -318,7 +318,7 @@ public class BookingsController : ControllerBase
                     newBalance = booking.Member.WalletBalance 
                 }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return StatusCode(500, ApiResponse<object>.ErrorResponse(
@@ -562,7 +562,7 @@ public class BookingsController : ControllerBase
                 "Sửa booking thành công", 
                 new { booking, newBalance = member.WalletBalance }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return StatusCode(500, ApiResponse<object>.ErrorResponse(
@@ -689,7 +689,7 @@ public class BookingsController : ControllerBase
                 $"Đổi lịch thành công. Phí admin: {adminFee:N0}đ", 
                 new { booking, adminFee, newBalance = member.WalletBalance }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return StatusCode(500, ApiResponse<object>.ErrorResponse(
@@ -817,7 +817,7 @@ public class BookingsController : ControllerBase
                     SecondsRemaining = secondsRemaining
                 }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             await transaction.RollbackAsync();
             return StatusCode(500, ApiResponse<object>.ErrorResponse(
